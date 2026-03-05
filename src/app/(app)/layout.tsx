@@ -1,6 +1,5 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { AppToolbar } from "@/components/app-toolbar";
 import { auth } from "@/lib/auth";
 
 export default async function AppLayout({
@@ -14,10 +13,5 @@ export default async function AppLayout({
     redirect("/login");
   }
 
-  return (
-    <>
-      {children}
-      <AppToolbar />
-    </>
-  );
+  return <>{children}</>;
 }

@@ -23,7 +23,6 @@ export default function Login() {
     const { error } = await authClient.signIn.email({
       email,
       password,
-      callbackURL: "/dashboard",
     });
 
     setPending(false);
@@ -37,7 +36,9 @@ export default function Login() {
       return;
     }
 
-    router.push("/dashboard");
+    const { data: orgs } = await authClient.organization.list();
+    const slug = orgs?.[0]?.slug;
+    router.push(slug ? `/${slug}` : "/");
   }
 
   return (

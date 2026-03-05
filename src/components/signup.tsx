@@ -26,7 +26,6 @@ export default function SignUp() {
       name: `${firstname} ${lastname}`.trim(),
       email,
       password,
-      callbackURL: "/dashboard",
     });
 
     setPending(false);
@@ -40,7 +39,9 @@ export default function SignUp() {
       return;
     }
 
-    router.push("/dashboard");
+    const { data: orgs } = await authClient.organization.list();
+    const slug = orgs?.[0]?.slug;
+    router.push(slug ? `/${slug}` : "/");
   }
 
   return (
