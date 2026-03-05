@@ -3,7 +3,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { APIError } from "better-auth/api";
-import { organization } from "better-auth/plugins";
+import { admin, organization } from "better-auth/plugins";
 import { PrismaClient } from "../../generated/client/client";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
@@ -15,6 +15,7 @@ export const auth = betterAuth({
   emailAndPassword: { enabled: true },
   plugins: [
     dash(),
+    admin(),
     organization({
       organizationHooks: {
         beforeAddMember: async ({ user }) => {
