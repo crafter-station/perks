@@ -185,25 +185,19 @@ function AchievementCard({ achievement }: { achievement: Achievement }) {
             style={{ opacity: isLocked ? 0.3 : 1 }}
           >
             <Icon
-              style={{
-                width: 28,
-                height: 28,
-                color: isProgress
-                  ? "var(--color-warning)"
+              className={
+                isProgress
+                  ? "text-warning"
                   : isLocked
-                    ? "var(--color-muted-foreground)"
-                    : "var(--color-card-foreground)",
-              }}
+                    ? "text-muted-foreground"
+                    : "text-card-foreground"
+              }
+              style={{ width: 28, height: 28 }}
             />
           </div>
           <div className="text-center">
             <MorphingDialogTitle
-              className="font-semibold text-sm leading-tight tracking-tight"
-              style={{
-                color: isLocked
-                  ? "var(--color-muted-foreground)"
-                  : "var(--color-card-foreground)",
-              }}
+              className={`font-semibold text-sm leading-tight tracking-tight ${isLocked ? "text-muted-foreground" : "text-card-foreground"}`}
             >
               {name}
             </MorphingDialogTitle>
@@ -217,7 +211,7 @@ function AchievementCard({ achievement }: { achievement: Achievement }) {
       <MorphingDialogContainer>
         <MorphingDialogContent
           style={{ borderRadius: "20px" }}
-          className="pointer-events-auto relative flex flex-col w-full sm:w-[420px] bg-card border border-border overflow-hidden shadow-xl"
+          className="pointer-events-auto relative flex flex-col w-full sm:w-105 bg-card border border-border overflow-hidden shadow-xl"
         >
           {/* Header */}
           <div className="flex flex-col items-center gap-4 px-8 pt-10 pb-6 border-b border-border">
@@ -226,15 +220,14 @@ function AchievementCard({ achievement }: { achievement: Achievement }) {
               style={{ opacity: isLocked ? 0.35 : 1 }}
             >
               <Icon
-                style={{
-                  width: 40,
-                  height: 40,
-                  color: isProgress
-                    ? "var(--color-warning)"
+                className={
+                  isProgress
+                    ? "text-warning"
                     : isLocked
-                      ? "var(--color-muted-foreground)"
-                      : "var(--color-card-foreground)",
-                }}
+                      ? "text-muted-foreground"
+                      : "text-card-foreground"
+                }
+                style={{ width: 40, height: 40 }}
               />
             </div>
             <div className="text-center">
