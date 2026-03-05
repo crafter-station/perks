@@ -29,8 +29,8 @@ export default function Login() {
 
     if (error) {
       sileo.action({
-        title: "Error al iniciar sesión",
-        description: error.message ?? "Credenciales inválidas",
+        title: "Sign in error",
+        description: error.message ?? "Invalid credentials",
         fill: "fill-destructive",
       });
       return;

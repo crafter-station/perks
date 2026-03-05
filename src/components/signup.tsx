@@ -32,8 +32,8 @@ export default function SignUp() {
 
     if (error) {
       sileo.action({
-        title: "Error al registrarse",
-        description: error.message ?? "No se pudo crear la cuenta",
+        title: "Sign up error",
+        description: error.message ?? "Could not create account",
         fill: "fill-destructive",
       });
       return;

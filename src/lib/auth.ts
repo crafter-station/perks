@@ -23,7 +23,7 @@ export const auth = betterAuth({
           });
           if (orgs.length > 0) {
             throw new APIError("BAD_REQUEST", {
-              message: "Ya perteneces a una organización",
+              message: "You already belong to an organization",
             });
           }
         },
@@ -33,7 +33,7 @@ export const auth = betterAuth({
           });
           if (orgs.length > 0) {
             throw new APIError("BAD_REQUEST", {
-              message: "Ya perteneces a una organización",
+              message: "You already belong to an organization",
             });
           }
         },

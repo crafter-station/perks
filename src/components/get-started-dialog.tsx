@@ -31,7 +31,7 @@ function Divider() {
   return (
     <div className="flex items-center gap-3">
       <div className="h-px flex-1 bg-border" />
-      <span className="text-xs text-muted-foreground/60">o</span>
+      <span className="text-xs text-muted-foreground/60">or</span>
       <div className="h-px flex-1 bg-border" />
     </div>
   );
@@ -68,7 +68,7 @@ function CreateOrganizationForm() {
     });
     setLoading(false);
     if (err) {
-      setError(err.message ?? "Error al crear la organización");
+      setError(err.message ?? "Error creating the organization");
       return;
     }
     setCreated({ name: name.trim(), slug: slug.trim() });
@@ -96,7 +96,7 @@ function CreateOrganizationForm() {
           render={<Link href={`/${created.slug}`} />}
           className="text-xs h-7 px-2.5 text-emerald-700 hover:text-emerald-800 dark:text-emerald-400"
         >
-          Ir →
+          Go →
         </Button>
       </div>
     );
@@ -110,14 +110,14 @@ function CreateOrganizationForm() {
             htmlFor="org-name"
             className="text-xs font-medium text-muted-foreground"
           >
-            Nombre
+            Name
           </label>
           <Input
             id="org-name"
             type="text"
             value={name}
             onChange={(e) => handleNameChange(e.target.value)}
-            placeholder="Mi equipo"
+            placeholder="My team"
             size="sm"
           />
         </div>
@@ -133,7 +133,7 @@ function CreateOrganizationForm() {
             type="text"
             value={slug}
             onChange={(e) => setSlug(e.target.value)}
-            placeholder="mi-equipo"
+            placeholder="my-team"
             className="font-mono"
             size="sm"
           />
@@ -154,10 +154,10 @@ function CreateOrganizationForm() {
         {loading ? (
           <>
             <Loader2 className="size-3.5 animate-spin" />
-            Creando...
+            Creating...
           </>
         ) : (
-          "Crear equipo"
+          "Create team"
         )}
       </Button>
     </div>
@@ -215,7 +215,7 @@ function InvitationsList({
   if (pending.length === 0) {
     return (
       <p className="text-muted-foreground text-sm text-center py-3">
-        No tienes invitaciones pendientes
+        You have no pending invitations
       </p>
     );
   }
@@ -224,7 +224,7 @@ function InvitationsList({
     <div className="flex flex-col gap-1.5">
       {pending.map((inv) => {
         const orgName =
-          inv.organizationName ?? inv.organization?.name ?? "Organización";
+          inv.organizationName ?? inv.organization?.name ?? "Organization";
 
         return (
           <div
@@ -235,7 +235,7 @@ function InvitationsList({
               <p className="text-sm font-medium truncate">{orgName}</p>
               {inv.inviterEmail && (
                 <p className="text-xs text-muted-foreground truncate">
-                  de {inv.inviterEmail}
+                  from {inv.inviterEmail}
                 </p>
               )}
             </div>
@@ -249,7 +249,7 @@ function InvitationsList({
               {accepting === inv.id ? (
                 <Loader2 className="size-3 animate-spin" />
               ) : (
-                "Unirse"
+                "Join"
               )}
             </Button>
           </div>
@@ -269,7 +269,7 @@ function OnboardingContent({
     <div className="flex flex-col gap-5">
       <section>
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-          Crear equipo
+          Create team
         </p>
         <CreateOrganizationForm />
       </section>
@@ -277,7 +277,7 @@ function OnboardingContent({
       <section>
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
           <Mail className="size-3.5" />
-          Invitaciones
+          Invitations
         </p>
         <InvitationsList onAccepted={onAccepted} />
       </section>
@@ -298,19 +298,19 @@ export function GetStartedDialog() {
     return (
       <Button variant="default" disabled className="gap-1 pr-1.5">
         <Loader2 className="size-4 animate-spin" />
-        Comenzar
+        Get Started
       </Button>
     );
   }
 
-  // No session → CTA a signup
+  // No session → CTA to signup
   if (!session) {
     return (
       <Button
         variant="default"
         render={
           <Link href="/signup">
-            Comenzar
+            Get Started
             <ChevronRight />
           </Link>
         }
@@ -321,14 +321,15 @@ export function GetStartedDialog() {
 
   const myOrg = ((orgs ?? []) as { slug: string }[])[0];
 
-  // Tiene org → ir directo
+  // Has org → go directly
   if (myOrg) {
     return (
       <Button
         variant="default"
         render={
           <Link href={`/${myOrg.slug}`}>
-            Ir a mi equipo <ChevronRight />
+            My Team
+            <ChevronRight />
           </Link>
         }
         className="gap-1 pr-1.5"
@@ -336,22 +337,22 @@ export function GetStartedDialog() {
     );
   }
 
-  // Con session pero sin org → dialog de onboarding
+  // Has session but no org → onboarding dialog
   return (
     <Dialog>
       <DialogTrigger
         render={
           <Button variant="default" className="gap-1 pr-1.5">
-            Comenzar
+            Get Started
             <ChevronRight />
           </Button>
         }
       />
       <DialogPopup>
         <DialogHeader>
-          <DialogTitle>Empecemos</DialogTitle>
+          <DialogTitle>Let's get started</DialogTitle>
           <DialogDescription>
-            Crea tu equipo o únete a uno con una invitación
+            Create your team or join one with an invitation
           </DialogDescription>
         </DialogHeader>
         <DialogPanel>

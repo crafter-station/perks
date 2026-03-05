@@ -1,7 +1,7 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../../generated/client/client";
 
-// Singleton para evitar múltiples instancias en dev con hot reload
+// Singleton to avoid multiple instances in dev with hot reload
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
 function createClient() {

@@ -110,7 +110,7 @@ function InviteDialog({
     });
     setLoading(false);
     if (err) {
-      setError(err.message ?? "Error al enviar la invitación");
+      setError(err.message ?? "Error sending the invitation");
       return;
     }
     setSuccess(true);
@@ -126,9 +126,9 @@ function InviteDialog({
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Invitar miembro</DialogTitle>
+          <DialogTitle>Invite member</DialogTitle>
           <DialogDescription>
-            Se enviará una invitación al correo ingresado.
+            An invitation will be sent to the provided email address.
           </DialogDescription>
         </DialogHeader>
         <DialogPanel>
@@ -137,10 +137,10 @@ function InviteDialog({
               <div className="flex size-10 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
                 <Check className="size-5 text-emerald-600 dark:text-emerald-400" />
               </div>
-              <p className="text-sm font-medium">Invitación enviada</p>
+              <p className="text-sm font-medium">Invitation sent</p>
               <p className="text-xs text-muted-foreground">{email}</p>
               <Button size="sm" variant="ghost" onClick={reset}>
-                Invitar a otro
+                Invite another
               </Button>
             </div>
           ) : (
@@ -150,12 +150,12 @@ function InviteDialog({
                   htmlFor="invite-email"
                   className="text-xs font-medium text-muted-foreground"
                 >
-                  Correo electrónico
+                  Email address
                 </label>
                 <Input
                   id="invite-email"
                   type="email"
-                  placeholder="nombre@ejemplo.com"
+                  placeholder="name@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSend()}
@@ -172,7 +172,7 @@ function InviteDialog({
               size="sm"
               onClick={() => onOpenChange(false)}
             >
-              Cancelar
+              Cancel
             </Button>
             <Button
               size="sm"
@@ -180,7 +180,7 @@ function InviteDialog({
               disabled={loading || !email.trim()}
             >
               {loading ? <Loader2 className="size-3.5 animate-spin" /> : null}
-              Enviar invitación
+              Send invitation
             </Button>
           </DialogFooter>
         )}
@@ -190,10 +190,10 @@ function InviteDialog({
 }
 
 const STATUS_LABEL: Record<string, string> = {
-  pending: "Pendiente",
-  accepted: "Aceptada",
-  rejected: "Rechazada",
-  cancelled: "Cancelada",
+  pending: "Pending",
+  accepted: "Accepted",
+  rejected: "Rejected",
+  cancelled: "Cancelled",
 };
 
 const STATUS_CLASS: Record<string, string> = {
@@ -232,7 +232,7 @@ function InvitationsDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Invitaciones enviadas</DialogTitle>
+          <DialogTitle>Sent invitations</DialogTitle>
         </DialogHeader>
         <DialogPanel>
           {loading ? (
@@ -241,7 +241,7 @@ function InvitationsDialog({
             </div>
           ) : invitations.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-6">
-              No hay invitaciones enviadas
+              No invitations sent
             </p>
           ) : (
             <div className="flex flex-col gap-1.5">
@@ -353,8 +353,8 @@ function OrgPanel({
               setInviteOpen(true);
               handleDialogChange(true);
             }}
-            aria-label="Invitar miembro"
-            title="Invitar"
+            aria-label="Invite member"
+            title="Invite"
           >
             <IconUserSearchFillDuo18 className="size-3.5" />
           </Button>
@@ -365,8 +365,8 @@ function OrgPanel({
               setListOpen(true);
               handleDialogChange(true);
             }}
-            aria-label="Ver invitaciones"
-            title="Invitaciones"
+            aria-label="View invitations"
+            title="Invitations"
           >
             <IconPaperPlane2FillDuo18 className="size-3.5" />
           </Button>
@@ -387,7 +387,7 @@ function OrgPanel({
             {members.length > 0 && (
               <span className="text-[10px] text-muted-foreground">
                 {members.length > 6 ? `+${members.length - 6} · ` : ""}
-                {members.length} {members.length === 1 ? "miembro" : "miembros"}
+                {members.length} {members.length === 1 ? "member" : "members"}
               </span>
             )}
           </>
