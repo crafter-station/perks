@@ -744,7 +744,7 @@ export function AppToolbar() {
                 aria-label={item.label}
                 variant={active === item.id ? "secondary" : "ghost"}
                 size="icon"
-                className="rounded-xl"
+                className="rounded-md"
                 onClick={() => {
                   if (!isOpen) setIsOpen(true);
                   if (active === item.id) {
