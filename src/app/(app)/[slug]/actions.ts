@@ -8,12 +8,12 @@ import { prisma } from "@/lib/prisma";
 export async function updateBadgeEvidence(
   orgBadgeId: string,
   evidence: string,
+  fileUrl?: string | null,
 ) {
   const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session) throw new Error("Unauthorized");
 
-  // Verify the orgBadge belongs to an org the user is a member of
   const orgBadge = await prisma.orgBadge.findUnique({
     where: { id: orgBadgeId },
     select: {
@@ -29,12 +29,21 @@ export async function updateBadgeEvidence(
 
   if (!orgBadge) throw new Error("Not found");
   if (orgBadge.organization.members.length === 0) throw new Error("Forbidden");
-  if (orgBadge.status !== "in-progress")
-    throw new Error("Badge must be in-progress to submit evidence");
+  if (orgBadge.status === "unlocked")
+    throw new Error("Badge is already unlocked");
+
+  const trimmed = evidence.trim();
+  const hasEvidence = trimmed || fileUrl;
 
   await prisma.orgBadge.update({
     where: { id: orgBadgeId },
-    data: { evidence: evidence.trim() || null },
+    data: {
+      evidence: trimmed || null,
+      fileUrl: fileUrl ?? undefined,
+      // Auto-advance to in-progress when any evidence is submitted from available
+      ...(hasEvidence &&
+        orgBadge.status === "available" && { status: "in-progress" }),
+    },
   });
 
   revalidatePath(`/${orgBadge.organization.slug}`);

@@ -148,8 +148,9 @@ model OrgBadge {
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   badgeId        String
   badge          Badge        @relation(fields: [badgeId], references: [id], onDelete: Cascade)
-  status         String       @default("unlocked") // unlocked | in-progress | locked
+  status         String       @default("available") // available | in-progress | unlocked
   evidence       String?      // URL, text or any context submitted by participants
+  fileUrl        String?      // Vercel Blob URL for uploaded image/PDF
 
   @@unique([organizationId, badgeId])
   @@index([organizationId])

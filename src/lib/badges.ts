@@ -1,11 +1,12 @@
 import { prisma } from "./prisma";
 
-export type BadgeStatus = "unlocked" | "in-progress" | "locked";
+export type BadgeStatus = "unlocked" | "in-progress" | "available";
 
 export type OrgBadgeWithBadge = {
   id: string;
   status: BadgeStatus;
   evidence: string | null;
+  fileUrl: string | null;
   badge: {
     id: string;
     key: string;
@@ -46,7 +47,7 @@ export async function getOrgBadges(
     data: allBadges.map((badge) => ({
       organizationId,
       badgeId: badge.id,
-      status: "locked",
+      status: "available",
     })),
     skipDuplicates: true,
   });

@@ -139,7 +139,7 @@ export function AdminOrgList({ orgs }: { orgs: Org[] }) {
                   </Badge>
                   <Badge variant="outline" className="tabular-nums gap-1">
                     <span className="inline-block size-1.5 rounded-full bg-muted-foreground/50" />
-                    {org.badges.filter((b) => b.status === "locked").length}
+                    {org.badges.filter((b) => b.status === "available").length}
                   </Badge>
                 </div>
               </div>
@@ -223,26 +223,57 @@ export function AdminOrgList({ orgs }: { orgs: Org[] }) {
                             )}
                           </div>
                         </TableCell>
-                        <TableCell className="max-w-[14rem]">
-                          {ob.evidence ? (
-                            ob.evidence.startsWith("http") ? (
-                              <a
-                                href={ob.evidence}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="block max-w-[13rem] truncate text-xs text-primary underline underline-offset-2 hover:opacity-80 transition-opacity cursor-pointer"
-                                title={ob.evidence}
-                              >
-                                {ob.evidence}
-                              </a>
-                            ) : (
-                              <span
-                                className="block max-w-[13rem] truncate text-xs text-muted-foreground"
-                                title={ob.evidence}
-                              >
-                                {ob.evidence}
-                              </span>
-                            )
+                        <TableCell className="max-w-[16rem]">
+                          {ob.evidence || ob.fileUrl ? (
+                            <div className="flex flex-col gap-1.5">
+                              {ob.evidence &&
+                                (ob.evidence.startsWith("http") ? (
+                                  <a
+                                    href={ob.evidence}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="block max-w-[14rem] truncate text-xs text-primary underline underline-offset-2 hover:opacity-80 transition-opacity cursor-pointer"
+                                    title={ob.evidence}
+                                  >
+                                    {ob.evidence}
+                                  </a>
+                                ) : (
+                                  <span
+                                    className="block max-w-[14rem] truncate text-xs text-muted-foreground"
+                                    title={ob.evidence}
+                                  >
+                                    {ob.evidence}
+                                  </span>
+                                ))}
+                              {ob.fileUrl &&
+                                (ob.fileUrl.toLowerCase().includes(".pdf") ? (
+                                  <a
+                                    href={ob.fileUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1.5 text-xs text-primary underline underline-offset-2 hover:opacity-80 transition-opacity cursor-pointer"
+                                  >
+                                    <span>📄</span>
+                                    <span className="max-w-[11rem] truncate">
+                                      {ob.fileUrl.split("/").pop()}
+                                    </span>
+                                  </a>
+                                ) : (
+                                  <a
+                                    href={ob.fileUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="block w-fit"
+                                  >
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img
+                                      src={ob.fileUrl}
+                                      alt="evidence"
+                                      className="h-10 w-10 rounded-md object-cover border border-border hover:opacity-80 transition-opacity cursor-pointer"
+                                    />
+                                  </a>
+                                ))}
+                            </div>
                           ) : (
                             <span className="text-xs text-muted-foreground/40">
                               —

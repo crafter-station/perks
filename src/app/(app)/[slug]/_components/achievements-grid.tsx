@@ -1,5 +1,6 @@
 "use client";
 
+import { PaperclipIcon, XIcon } from "lucide-react";
 import {
   IconAward,
   IconBadgeSparkle,
@@ -14,7 +15,7 @@ import {
   IconStarSparkle,
   IconThumbsUp,
 } from "nucleo-glass";
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -48,67 +49,169 @@ const iconMap: Record<string, any> = {
   IconLock,
 };
 
-const filters = ["All", "Unlocked", "In progress", "Locked"] as const;
+const filters = ["All", "Unlocked", "In progress", "Available"] as const;
 type Filter = (typeof filters)[number];
 
 const statusLabel: Record<BadgeStatus, string> = {
   unlocked: "Unlocked",
   "in-progress": "In progress",
-  locked: "Locked",
+  available: "Available",
 };
 
 const statusColor: Record<BadgeStatus, string> = {
   unlocked: "var(--color-success)",
   "in-progress": "var(--color-warning)",
-  locked: "var(--color-muted-foreground)",
+  available: "var(--color-muted-foreground)",
 };
 
 function EvidenceInput({
   orgBadgeId,
   initialEvidence,
+  initialFileUrl,
 }: {
   orgBadgeId: string;
   initialEvidence: string | null;
+  initialFileUrl: string | null;
 }) {
   const [value, setValue] = useState(initialEvidence ?? "");
+  const [fileUrl, setFileUrl] = useState<string | null>(initialFileUrl);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [saved, setSaved] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const fileRef = useRef<HTMLInputElement>(null);
 
-  function handleSave() {
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0] ?? null;
+    setPendingFile(file);
+    setSaved(false);
+  }
+
+  function handleRemoveFile() {
+    setPendingFile(null);
+    setFileUrl(null);
+    setSaved(false);
+    if (fileRef.current) fileRef.current.value = "";
+  }
+
+  async function handleSave() {
+    let uploadedUrl = fileUrl;
+
+    if (pendingFile) {
+      setUploading(true);
+      const form = new FormData();
+      form.append("file", pendingFile);
+      form.append("orgBadgeId", orgBadgeId);
+      const res = await fetch("/api/upload", { method: "POST", body: form });
+      const data = await res.json();
+      if (!res.ok) {
+        setUploading(false);
+        return;
+      }
+      uploadedUrl = data.url;
+      setFileUrl(uploadedUrl);
+      setPendingFile(null);
+      setUploading(false);
+    }
+
     startTransition(async () => {
-      await updateBadgeEvidence(orgBadgeId, value);
+      await updateBadgeEvidence(orgBadgeId, value, uploadedUrl);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     });
   }
 
+  const isPdf = (url: string) => url.toLowerCase().includes(".pdf");
+  const displayFile =
+    pendingFile ??
+    (fileUrl ? { name: fileUrl.split("/").pop() ?? "file" } : null);
+  const isLoading = uploading || isPending;
+
   return (
-    <div className="px-8 pb-8 flex flex-col gap-2">
-      <Label
-        htmlFor={`evidence-${orgBadgeId}`}
-        className="text-muted-foreground"
-      >
-        Evidence / Context
-      </Label>
-      <Textarea
-        id={`evidence-${orgBadgeId}`}
-        value={value}
-        onChange={(e) => {
-          setValue(e.target.value);
-          setSaved(false);
-        }}
-        placeholder="Add a URL, explanation or any context…"
-        rows={3}
-        size="sm"
-      />
+    <div className="px-8 pb-8 flex flex-col gap-3">
+      <div className="flex flex-col gap-2">
+        <Label
+          htmlFor={`evidence-${orgBadgeId}`}
+          className="text-muted-foreground"
+        >
+          Context
+        </Label>
+        <Textarea
+          id={`evidence-${orgBadgeId}`}
+          value={value}
+          onChange={(e) => {
+            setValue(e.target.value);
+            setSaved(false);
+          }}
+          placeholder="Add a URL, explanation or any context…"
+          rows={3}
+          size="sm"
+        />
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <Label className="text-muted-foreground">Attachment</Label>
+
+        {/* File preview */}
+        {displayFile && (
+          <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2">
+            {fileUrl && !pendingFile && !isPdf(fileUrl) && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={fileUrl}
+                alt="preview"
+                className="h-8 w-8 rounded object-cover shrink-0"
+              />
+            )}
+            <span className="truncate text-xs text-foreground flex-1 min-w-0">
+              {displayFile.name}
+            </span>
+            <button
+              type="button"
+              onClick={handleRemoveFile}
+              className="shrink-0 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              aria-label="Remove file"
+            >
+              <XIcon className="size-3.5" />
+            </button>
+          </div>
+        )}
+
+        {/* Upload button */}
+        {!displayFile && (
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            className="flex items-center gap-2 rounded-lg border border-dashed border-border bg-muted/20 px-3 py-2.5 text-xs text-muted-foreground hover:bg-muted/40 hover:text-foreground transition-all cursor-pointer"
+          >
+            <PaperclipIcon className="size-3.5 shrink-0" />
+            Attach image or PDF
+          </button>
+        )}
+
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*,application/pdf"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+      </div>
+
       <Button
-        size="sm"
         variant={saved ? "outline" : "default"}
         onClick={handleSave}
-        disabled={isPending}
+        disabled={isLoading}
         className="self-end"
+        size="sm"
       >
-        {isPending ? "Saving…" : saved ? "Saved!" : "Save"}
+        {uploading
+          ? "Uploading…"
+          : isPending
+            ? "Saving…"
+            : saved
+              ? "Saved!"
+              : "Save"}
       </Button>
     </div>
   );
@@ -117,16 +220,16 @@ function EvidenceInput({
 function AchievementCard({ item }: { item: OrgBadgeWithBadge }) {
   const { badge, status, evidence } = item;
   const Icon = iconMap[badge.iconName] ?? IconLock;
-  const isLocked = status === "locked";
+  const isAvailable = status === "available";
   const isProgress = status === "in-progress";
-  const canSubmitEvidence = status === "in-progress";
+  const canSubmitEvidence = status === "in-progress" || status === "available";
 
   return (
     <MorphingDialog
       transition={{ type: "spring", bounce: 0.05, duration: 0.25 }}
     >
       <MorphingDialogTrigger className="w-full text-left cursor-pointer">
-        <div className="relative flex flex-col items-center gap-4 p-5 rounded-2xl border bg-card text-card-foreground shadow-xs/5 transition-all duration-200 hover:scale-[1.02] hover:shadow-md cursor-pointer before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(var(--radius-2xl)-1px)] before:shadow-[0_1px_--theme(--color-black/4%)] dark:before:shadow-[0_-1px_--theme(--color-white/6%)]">
+        <div className="relative flex flex-col items-center gap-4 p-5 rounded-2xl border bg-card text-card-foreground shadow-xs/5 transition-all duration-200 hover:scale-[1.01] hover:shadow-xs cursor-pointer before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(var(--radius-2xl)-1px)] before:shadow-[0_1px_--theme(--color-black/4%)] dark:before:shadow-[0_-1px_--theme(--color-white/6%)]">
           {isProgress && (
             <span className="absolute top-3 right-3 w-1.5 h-1.5 rounded-full bg-warning animate-pulse" />
           )}
@@ -135,13 +238,13 @@ function AchievementCard({ item }: { item: OrgBadgeWithBadge }) {
           )}
           <div
             className="w-14 h-14 rounded-xl flex items-center justify-center bg-muted transition-opacity duration-200"
-            style={{ opacity: isLocked ? 0.3 : 1 }}
+            style={{ opacity: isAvailable ? 0.5 : 1 }}
           >
             <Icon
               className={
                 isProgress
                   ? "text-warning"
-                  : isLocked
+                  : isAvailable
                     ? "text-muted-foreground"
                     : "text-card-foreground"
               }
@@ -150,7 +253,7 @@ function AchievementCard({ item }: { item: OrgBadgeWithBadge }) {
           </div>
           <div className="text-center">
             <MorphingDialogTitle
-              className={`font-semibold text-sm leading-tight tracking-tight ${isLocked ? "text-muted-foreground" : "text-card-foreground"}`}
+              className={`font-semibold text-sm leading-tight tracking-tight ${isAvailable ? "text-muted-foreground" : "text-card-foreground"}`}
             >
               {badge.name}
             </MorphingDialogTitle>
@@ -158,7 +261,7 @@ function AchievementCard({ item }: { item: OrgBadgeWithBadge }) {
               {badge.subtitle}
             </MorphingDialogSubtitle>
           </div>
-          {evidence && !isLocked && (
+          {evidence && (
             <span className="absolute bottom-3 left-3 w-1.5 h-1.5 rounded-full bg-primary opacity-70" />
           )}
         </div>
@@ -169,16 +272,16 @@ function AchievementCard({ item }: { item: OrgBadgeWithBadge }) {
           style={{ borderRadius: "20px" }}
           className="pointer-events-auto relative flex flex-col w-full sm:w-105 bg-card border border-border overflow-hidden shadow-xl"
         >
-          <div className="flex flex-col items-center gap-4 px-8 pt-10 pb-6 border-b border-border">
+          <div className="flex flex-col items-center gap-4 px-8 pt-10 pb-6">
             <div
               className="w-20 h-20 rounded-2xl flex items-center justify-center bg-muted"
-              style={{ opacity: isLocked ? 0.35 : 1 }}
+              style={{ opacity: isAvailable ? 0.5 : 1 }}
             >
               <Icon
                 className={
                   isProgress
                     ? "text-warning"
-                    : isLocked
+                    : isAvailable
                       ? "text-muted-foreground"
                       : "text-card-foreground"
                 }
@@ -217,7 +320,11 @@ function AchievementCard({ item }: { item: OrgBadgeWithBadge }) {
             </p>
 
             {canSubmitEvidence && (
-              <EvidenceInput orgBadgeId={item.id} initialEvidence={evidence} />
+              <EvidenceInput
+                orgBadgeId={item.id}
+                initialEvidence={evidence}
+                initialFileUrl={item.fileUrl}
+              />
             )}
           </MorphingDialogDescription>
 
@@ -242,7 +349,7 @@ export function AchievementsGrid({ items }: { items: OrgBadgeWithBadge[] }) {
     if (activeFilter === "All") return true;
     if (activeFilter === "Unlocked") return item.status === "unlocked";
     if (activeFilter === "In progress") return item.status === "in-progress";
-    if (activeFilter === "Locked") return item.status === "locked";
+    if (activeFilter === "Available") return item.status === "available";
     return true;
   });
 
@@ -251,7 +358,7 @@ export function AchievementsGrid({ items }: { items: OrgBadgeWithBadge[] }) {
     All: items.length,
     Unlocked: items.filter((i) => i.status === "unlocked").length,
     "In progress": items.filter((i) => i.status === "in-progress").length,
-    Locked: items.filter((i) => i.status === "locked").length,
+    Available: items.filter((i) => i.status === "available").length,
   };
 
   return (

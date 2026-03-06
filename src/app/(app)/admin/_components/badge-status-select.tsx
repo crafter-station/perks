@@ -12,13 +12,13 @@ import type { BadgeStatus } from "@/lib/badges";
 import { updateBadgeStatus } from "../actions";
 
 const STATUS_LABELS: Record<BadgeStatus, string> = {
-  locked: "Locked",
+  available: "Available",
   "in-progress": "In Progress",
   unlocked: "Unlocked",
 };
 
 const STATUS_DOT_CLASS: Record<BadgeStatus, string> = {
-  locked: "bg-muted-foreground/50",
+  available: "bg-muted-foreground/50",
   "in-progress": "bg-warning-foreground",
   unlocked: "bg-success-foreground",
 };
