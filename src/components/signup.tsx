@@ -12,8 +12,6 @@ import { authClient } from "@/lib/auth-client";
 
 export default function SignUp() {
   const router = useRouter();
-  const [firstname, setFirstname] = useState("");
-  const [lastname, setLastname] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
@@ -23,7 +21,7 @@ export default function SignUp() {
     setPending(true);
 
     const { error } = await authClient.signUp.email({
-      name: `${firstname} ${lastname}`.trim(),
+      name: email,
       email,
       password,
     });
@@ -31,7 +29,11 @@ export default function SignUp() {
     setPending(false);
 
     if (error) {
-      sileo.action({
+      sileo.error({
+        styles: {
+          title: "text-white!",
+          description: "text-white!",
+        },
         title: "Sign up error",
         description: error.message ?? "Could not create account",
         fill: "fill-destructive",
@@ -60,35 +62,6 @@ export default function SignUp() {
           </div>
           <hr className="my-4 border-dashed" />
           <div className="space-y-5">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="firstname" className="block text-sm">
-                  Firstname
-                </Label>
-                <Input
-                  type="text"
-                  required
-                  name="firstname"
-                  id="firstname"
-                  value={firstname}
-                  onChange={(e) => setFirstname(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lastname" className="block text-sm">
-                  Lastname
-                </Label>
-                <Input
-                  type="text"
-                  required
-                  name="lastname"
-                  id="lastname"
-                  value={lastname}
-                  onChange={(e) => setLastname(e.target.value)}
-                />
-              </div>
-            </div>
-
             <div className="space-y-2">
               <Label htmlFor="email" className="block text-sm">
                 Username
