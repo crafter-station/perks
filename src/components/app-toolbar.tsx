@@ -3,10 +3,11 @@
 import { Check, Copy, ExternalLink, Loader2, LogOut } from "lucide-react";
 import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import { useParams } from "next/navigation";
+import { useTheme } from "next-themes";
 import {
   IconArrowDoorOut3FillDuo18,
   IconAwardCertificateFillDuo18,
-  IconGear2FillDuo18,
+  IconDarkLightFillDuo18,
   IconOfficeFillDuo18,
   IconPaperPlane2FillDuo18,
   IconUserFillDuo18,
@@ -30,7 +31,6 @@ import { Input } from "@/components/ui/input";
 import useClickOutside from "@/hooks/useClickOutside";
 import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
-import ModeToggle from "./mode-toggle";
 
 const transition = {
   type: "spring" as const,
@@ -499,16 +499,6 @@ function CertificatePanel() {
   );
 }
 
-function SettingsPanel() {
-  return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <ModeToggle />
-      </div>
-    </div>
-  );
-}
-
 function CopyCode({ code }: { code: string }) {
   const [copied, setCopied] = useState(false);
 
@@ -696,6 +686,21 @@ function SponsorResourcesPanel({
   );
 }
 
+function ThemeToggleButton() {
+  const { resolvedTheme, setTheme } = useTheme();
+  return (
+    <Button
+      aria-label="Toggle theme"
+      variant="ghost"
+      size="icon"
+      className="rounded-md"
+      onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+    >
+      <IconDarkLightFillDuo18 className="h-4.5 w-4.5" />
+    </Button>
+  );
+}
+
 const ITEM_DEFS = [
   {
     id: 1,
@@ -716,11 +721,6 @@ const ITEM_DEFS = [
     id: 4,
     label: "Resources",
     icon: <IconVault3FillDuo18 className="h-4.5 w-4.5" />,
-  },
-  {
-    id: 5,
-    label: "Settings",
-    icon: <IconGear2FillDuo18 className="h-4.5 w-4.5" />,
   },
 ];
 
@@ -785,7 +785,6 @@ export function AppToolbar() {
                               onDialogChange={setDialogOpen}
                             />
                           )}
-                          {item.id === 5 && <SettingsPanel />}
                         </div>
                       </motion.div>
                     );
@@ -817,6 +816,7 @@ export function AppToolbar() {
                 {item.icon}
               </Button>
             ))}
+            <ThemeToggleButton />
           </div>
         </div>
       </div>
