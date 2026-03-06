@@ -669,7 +669,7 @@ function SponsorResourcesPanel({
                 </span>
                 <div className="flex flex-col gap-1">
                   <a
-                    href="https://pawboard.com"
+                    href="https://www.pawboard.dev/"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
@@ -678,7 +678,7 @@ function SponsorResourcesPanel({
                     Pawboard
                   </a>
                   <a
-                    href="https://c3crafter.com"
+                    href="https://c3.crafter.run/"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
