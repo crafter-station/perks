@@ -1,9 +1,8 @@
 "use client";
 
-import { Check, Copy, Eye, EyeOff, Loader2, LogOut } from "lucide-react";
+import { Check, Copy, ExternalLink, Loader2, LogOut } from "lucide-react";
 import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import { useParams } from "next/navigation";
-import { IconKey } from "nucleo-glass";
 import {
   IconArrowDoorOut3FillDuo18,
   IconAwardCertificateFillDuo18,
@@ -510,83 +509,37 @@ function SettingsPanel() {
   );
 }
 
-type ApiKey = { id: string; sponsor: string; name: string; key: string };
-
-const SPONSOR_KEYS: ApiKey[] = [
-  {
-    id: "1",
-    sponsor: "ElevenLabs",
-    name: "Text-to-Speech API",
-    key: "xi_4xK9mN2pQr8sT1uVwX3yZ",
-  },
-  {
-    id: "2",
-    sponsor: "v0 by Vercel",
-    name: "Generation API",
-    key: "v0_7aB3cD5eF6gH0iJkL2mN",
-  },
-  {
-    id: "3",
-    sponsor: "Supabase",
-    name: "Project API Key",
-    key: "sbp_9pQ1rS2tU3vW4xY5zA6bC",
-  },
-  {
-    id: "4",
-    sponsor: "Resend",
-    name: "Email API",
-    key: "re_8cD9eF0gH1iJ2kL3mN4oP",
-  },
-];
-
-function ApiKeyRow({ apiKey }: { apiKey: ApiKey }) {
-  const [visible, setVisible] = useState(false);
+function CopyCode({ code }: { code: string }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(apiKey.key);
+    navigator.clipboard.writeText(code);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   return (
-    <div className="flex flex-col gap-1.5 py-3 border-b border-border last:border-0">
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-card-foreground">
-          {apiKey.sponsor}
-        </span>
-        <span className="text-xs text-muted-foreground">{apiKey.name}</span>
-      </div>
-      <div className="flex items-center gap-2">
-        <code className="flex-1 text-xs bg-muted rounded-md px-2 py-1.5 font-mono text-muted-foreground truncate">
-          {visible ? apiKey.key : apiKey.key.slice(0, 4) + "•".repeat(18)}
-        </code>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          onClick={() => setVisible((v) => !v)}
-          aria-label={visible ? "Hide key" : "Show key"}
-        >
-          {visible ? (
-            <EyeOff className="h-3.5 w-3.5" />
-          ) : (
-            <Eye className="h-3.5 w-3.5" />
-          )}
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          onClick={handleCopy}
-          aria-label="Copy key"
-        >
-          <Copy className={cn("h-3.5 w-3.5", copied && "text-success")} />
-        </Button>
-      </div>
+    <div className="flex items-center gap-2">
+      <code className="flex-1 text-xs bg-muted rounded-md px-2 py-1.5 font-mono text-card-foreground tracking-wider">
+        {code}
+      </code>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        onClick={handleCopy}
+        aria-label="Copy code"
+      >
+        {copied ? (
+          <Check className="h-3.5 w-3.5 text-success" />
+        ) : (
+          <Copy className="h-3.5 w-3.5" />
+        )}
+      </Button>
     </div>
   );
 }
 
-function ApiKeysPanel({
+function SponsorResourcesPanel({
   onDialogChange,
 }: {
   onDialogChange: (open: boolean) => void;
@@ -605,10 +558,10 @@ function ApiKeysPanel({
           className="text-sm font-semibold text-card-foreground"
           style={{ letterSpacing: "-0.02em" }}
         >
-          Sponsor API Keys
+          Sponsor Resources
         </span>
         <span className="text-xs text-muted-foreground">
-          Access keys provided by hackathon sponsors.
+          Redeem credits and access sponsor tools.
         </span>
       </div>
       <Button
@@ -617,20 +570,124 @@ function ApiKeysPanel({
         className="w-full"
         onClick={() => handleOpenChange(true)}
       >
-        <IconKey className="h-3.5 w-3.5" />
-        View API keys
+        <IconVault3FillDuo18 className="h-3.5 w-3.5" />
+        View resources
       </Button>
 
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Sponsor API Keys</DialogTitle>
+            <DialogTitle>Sponsor Resources</DialogTitle>
+            <DialogDescription>
+              How to redeem credits and access tools from our sponsors.
+            </DialogDescription>
           </DialogHeader>
           <DialogPanel>
-            <div className="flex flex-col">
-              {SPONSOR_KEYS.map((k) => (
-                <ApiKeyRow key={k.id} apiKey={k} />
-              ))}
+            <div className="flex flex-col gap-4">
+              {/* Featherless AI */}
+              <div className="flex flex-col gap-1.5 pb-4 border-b border-border">
+                <span className="text-sm font-semibold text-card-foreground">
+                  Featherless AI
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  Follow the guide to redeem your credits.
+                </span>
+                <a
+                  href="https://docs.google.com/document/d/1mCh5MtOzBw0aJpurQVUmIVFfPMAHW3MjNemE-LNiMto/edit?tab=t.0"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  Redemption guide
+                </a>
+              </div>
+
+              {/* ElevenLabs */}
+              <div className="flex flex-col gap-1.5 pb-4 border-b border-border">
+                <span className="text-sm font-semibold text-card-foreground">
+                  ElevenLabs
+                </span>
+                <ol className="flex flex-col gap-1 list-decimal list-inside text-xs text-muted-foreground">
+                  <li>Join the Discord server</li>
+                  <li>
+                    Gain access to the{" "}
+                    <span className="font-mono text-card-foreground">
+                      #coupon-codes
+                    </span>{" "}
+                    channel
+                  </li>
+                  <li>
+                    Click{" "}
+                    <strong className="text-card-foreground">
+                      "Start Redemption"
+                    </strong>
+                  </li>
+                  <li>
+                    Select the event and fill out the form using your
+                    registration email
+                  </li>
+                  <li>The bot sends you a unique coupon code</li>
+                </ol>
+                <div className="flex flex-col gap-1 mt-1">
+                  <a
+                    href="https://discord.com/invite/VnBvbbcdEC"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                    Join Discord
+                  </a>
+                  <a
+                    href="https://youtu.be/S143_JtCtV8"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                    Video tutorial
+                  </a>
+                </div>
+              </div>
+
+              {/* v0 by Vercel */}
+              <div className="flex flex-col gap-1.5 pb-4 border-b border-border">
+                <span className="text-sm font-semibold text-card-foreground">
+                  v0 by Vercel
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  Use this code to redeem your v0 credits.
+                </span>
+                <CopyCode code="SHE-SHIPS-V0" />
+              </div>
+
+              {/* Other tools */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-sm font-semibold text-card-foreground">
+                  Other Tools
+                </span>
+                <div className="flex flex-col gap-1">
+                  <a
+                    href="https://pawboard.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                    Pawboard
+                  </a>
+                  <a
+                    href="https://c3crafter.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                    C3 Crafter
+                  </a>
+                </div>
+              </div>
             </div>
           </DialogPanel>
         </DialogContent>
@@ -657,7 +714,7 @@ const ITEM_DEFS = [
   },
   {
     id: 4,
-    label: "API Keys",
+    label: "Resources",
     icon: <IconVault3FillDuo18 className="h-4.5 w-4.5" />,
   },
   {
@@ -724,7 +781,9 @@ export function AppToolbar() {
                           {item.id === 2 && <ProfilePanel />}
                           {item.id === 3 && <CertificatePanel />}
                           {item.id === 4 && (
-                            <ApiKeysPanel onDialogChange={setDialogOpen} />
+                            <SponsorResourcesPanel
+                              onDialogChange={setDialogOpen}
+                            />
                           )}
                           {item.id === 5 && <SettingsPanel />}
                         </div>

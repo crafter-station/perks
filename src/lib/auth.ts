@@ -2,12 +2,11 @@ import { dash } from "@better-auth/infra";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { APIError } from "better-auth/api";
-import { admin, organization } from "better-auth/plugins";
-import { emailOTP } from "better-auth/plugins";
+import { APIError, createAuthMiddleware } from "better-auth/api";
+import { admin, emailOTP, organization } from "better-auth/plugins";
+import { Inbound } from "inboundemail";
 import { PrismaClient } from "../../generated/client/client";
 import { getLumaGuest } from "./luma";
-import { Inbound } from "inboundemail";
 
 const inbound = new Inbound({
   apiKey: process.env.INBOUND_API_KEY!,
@@ -38,36 +37,33 @@ export const auth = betterAuth({
       },
     },
   },
+  hooks: {
+    before: createAuthMiddleware(async (ctx) => {
+      if (ctx.path !== "/email-otp/send-verification-otp") return;
+      const body = ctx.body as { email: string; type: string } | undefined;
+      if (body?.type !== "sign-in") return;
+      const result = await getLumaGuest(body.email);
+      if (!result.ok) {
+        throw new APIError("FORBIDDEN", {
+          message:
+            result.reason === "not_found"
+              ? "You must use the email you registered with on Luma"
+              : "Your Luma registration is pending approval by the organizers",
+        });
+      }
+    }),
+  },
   plugins: [
     dash(),
     admin(),
     emailOTP({
       async sendVerificationOTP({ email, otp, type }) {
-        if (type === "sign-in") {
-          // Send the OTP for sign in
-          const response = await inbound.emails.send({
-            from: "She Ships <perks@sheships.org>",
-            subject: "Sign in OTP",
-            to: email,
-            html: `<p>Your OTP is: <strong>${otp}</strong></p>`,
-          });
-        } else if (type === "email-verification") {
-          // Send the OTP for email verification
-          const response = await inbound.emails.send({
-            from: "She Ships <perks@sheships.org>",
-            subject: "Email Verification OTP",
-            to: email,
-            html: `<p>Your OTP is: <strong>${otp}</strong></p>`,
-          });
-        } else {
-          // Send the OTP for password reset
-          const response = await inbound.emails.send({
-            from: "She Ships <perks@sheships.org>",
-            subject: "Password Reset OTP",
-            to: email,
-            html: `<p>Your OTP is: <strong>${otp}</strong></p>`,
-          });
-        }
+        inbound.emails.send({
+          from: "She Ships <perks@sheships.org>",
+          subject: "Your She Ships code",
+          to: email,
+          html: `<p>Your code is: <strong>${otp}</strong></p>`,
+        });
       },
     }),
     organization({
