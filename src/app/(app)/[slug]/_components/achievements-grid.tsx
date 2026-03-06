@@ -14,7 +14,9 @@ import {
   IconStarSparkle,
   IconThumbsUp,
 } from "nucleo-glass";
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import {
   MorphingDialog,
   MorphingDialogClose,
@@ -25,7 +27,9 @@ import {
   MorphingDialogTitle,
   MorphingDialogTrigger,
 } from "@/components/ui/morphing-dialog";
+import { Textarea } from "@/components/ui/textarea";
 import type { BadgeStatus, OrgBadgeWithBadge } from "@/lib/badges";
+import { updateBadgeEvidence } from "../actions";
 
 // Map iconName string → component
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -59,11 +63,63 @@ const statusColor: Record<BadgeStatus, string> = {
   locked: "var(--color-muted-foreground)",
 };
 
+function EvidenceInput({
+  orgBadgeId,
+  initialEvidence,
+}: {
+  orgBadgeId: string;
+  initialEvidence: string | null;
+}) {
+  const [value, setValue] = useState(initialEvidence ?? "");
+  const [saved, setSaved] = useState(false);
+  const [isPending, startTransition] = useTransition();
+
+  function handleSave() {
+    startTransition(async () => {
+      await updateBadgeEvidence(orgBadgeId, value);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    });
+  }
+
+  return (
+    <div className="px-8 pb-8 flex flex-col gap-2">
+      <Label
+        htmlFor={`evidence-${orgBadgeId}`}
+        className="text-muted-foreground"
+      >
+        Evidence / Context
+      </Label>
+      <Textarea
+        id={`evidence-${orgBadgeId}`}
+        value={value}
+        onChange={(e) => {
+          setValue(e.target.value);
+          setSaved(false);
+        }}
+        placeholder="Add a URL, explanation or any context…"
+        rows={3}
+        size="sm"
+      />
+      <Button
+        size="sm"
+        variant={saved ? "outline" : "default"}
+        onClick={handleSave}
+        disabled={isPending}
+        className="self-end"
+      >
+        {isPending ? "Saving…" : saved ? "Saved!" : "Save"}
+      </Button>
+    </div>
+  );
+}
+
 function AchievementCard({ item }: { item: OrgBadgeWithBadge }) {
-  const { badge, status } = item;
+  const { badge, status, evidence } = item;
   const Icon = iconMap[badge.iconName] ?? IconLock;
   const isLocked = status === "locked";
   const isProgress = status === "in-progress";
+  const canSubmitEvidence = status === "in-progress";
 
   return (
     <MorphingDialog
@@ -102,6 +158,9 @@ function AchievementCard({ item }: { item: OrgBadgeWithBadge }) {
               {badge.subtitle}
             </MorphingDialogSubtitle>
           </div>
+          {evidence && !isLocked && (
+            <span className="absolute bottom-3 left-3 w-1.5 h-1.5 rounded-full bg-primary opacity-70" />
+          )}
         </div>
       </MorphingDialogTrigger>
 
@@ -156,6 +215,10 @@ function AchievementCard({ item }: { item: OrgBadgeWithBadge }) {
             <p className="text-muted-foreground text-sm leading-relaxed px-8 py-6">
               {badge.description}
             </p>
+
+            {canSubmitEvidence && (
+              <EvidenceInput orgBadgeId={item.id} initialEvidence={evidence} />
+            )}
           </MorphingDialogDescription>
 
           <MorphingDialogClose

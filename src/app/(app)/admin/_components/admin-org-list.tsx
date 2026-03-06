@@ -1,6 +1,10 @@
 "use client";
 
 import { BuildingIcon, SearchIcon, ShieldIcon } from "lucide-react";
+import {
+  IconMagnifierFillDuo18,
+  IconOfficeFillDuo18,
+} from "nucleo-ui-essential-fill-duo-18";
 import { useState } from "react";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -34,10 +38,6 @@ import {
 } from "@/components/ui/table";
 import type { BadgeStatus, OrgBadgeWithBadge } from "@/lib/badges";
 import { BadgeStatusSelect } from "./badge-status-select";
-import {
-  IconMagnifierFillDuo18,
-  IconOfficeFillDuo18,
-} from "nucleo-ui-essential-fill-duo-18";
 
 type OrgMember = {
   id: string;
@@ -204,6 +204,7 @@ export function AdminOrgList({ orgs }: { orgs: Org[] }) {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="ps-5 w-full">Badge</TableHead>
+                      <TableHead className="w-56">Evidence</TableHead>
                       <TableHead className="pe-5 w-44">Status</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -221,6 +222,32 @@ export function AdminOrgList({ orgs }: { orgs: Org[] }) {
                               </span>
                             )}
                           </div>
+                        </TableCell>
+                        <TableCell className="max-w-[14rem]">
+                          {ob.evidence ? (
+                            ob.evidence.startsWith("http") ? (
+                              <a
+                                href={ob.evidence}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block max-w-[13rem] truncate text-xs text-primary underline underline-offset-2 hover:opacity-80 transition-opacity cursor-pointer"
+                                title={ob.evidence}
+                              >
+                                {ob.evidence}
+                              </a>
+                            ) : (
+                              <span
+                                className="block max-w-[13rem] truncate text-xs text-muted-foreground"
+                                title={ob.evidence}
+                              >
+                                {ob.evidence}
+                              </span>
+                            )
+                          ) : (
+                            <span className="text-xs text-muted-foreground/40">
+                              —
+                            </span>
+                          )}
                         </TableCell>
                         <TableCell className="pe-5">
                           <BadgeStatusSelect

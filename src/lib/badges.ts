@@ -5,6 +5,7 @@ export type BadgeStatus = "unlocked" | "in-progress" | "locked";
 export type OrgBadgeWithBadge = {
   id: string;
   status: BadgeStatus;
+  evidence: string | null;
   badge: {
     id: string;
     key: string;

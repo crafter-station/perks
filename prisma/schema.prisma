@@ -149,6 +149,7 @@ model OrgBadge {
   badgeId        String
   badge          Badge        @relation(fields: [badgeId], references: [id], onDelete: Cascade)
   status         String       @default("unlocked") // unlocked | in-progress | locked
+  evidence       String?      // URL, text or any context submitted by participants
 
   @@unique([organizationId, badgeId])
   @@index([organizationId])
