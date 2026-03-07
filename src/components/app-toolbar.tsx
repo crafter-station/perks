@@ -583,7 +583,7 @@ function SponsorResourcesPanel({
                   Follow the guide to redeem your credits.
                 </span>
                 <a
-                  href="https://docs.google.com/document/d/1mCh5MtOzBw0aJpurQVUmIVFfPMAHW3MjNemE-LNiMto/edit?tab=t.0"
+                  href="https://drive.google.com/file/d/1DfnRTcefSDoY5d7FJ1ToOOlrUc2Qdjzn/view?usp=sharing"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"

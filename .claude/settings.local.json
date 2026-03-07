@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls D:/projects/perks/src/app/\\\\\\(app\\\\\\))",
+      "Bash(ls D:/projects/perks/src/app/\\\\\\(auth\\\\\\))",
+      "Bash(ls D:/projects/perks/src/app/\\\\\\(app\\\\\\)/[slug])",
+      "Bash(cat D:/projects/perks/src/app/\\\\\\(app\\\\\\)/[slug]/page.tsx)",
+      "Bash(bunx prisma generate)",
+      "Bash(bun prisma generate)",
+      "Bash(node --version)",
+      "Bash(bun --version)",
+      "Bash(bun x --bun prisma generate)"
+    ]
+  }
+}
