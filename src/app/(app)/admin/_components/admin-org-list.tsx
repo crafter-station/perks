@@ -1,6 +1,11 @@
 "use client";
 
-import { BuildingIcon, SearchIcon, ShieldIcon } from "lucide-react";
+import {
+  BuildingIcon,
+  PaperclipIcon,
+  SearchIcon,
+  ShieldIcon,
+} from "lucide-react";
 import {
   IconMagnifierFillDuo18,
   IconOfficeFillDuo18,
@@ -37,6 +42,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { BadgeStatus, OrgBadgeWithBadge } from "@/lib/badges";
+import { cn } from "@/lib/utils";
 import { BadgeStatusSelect } from "./badge-status-select";
 
 type OrgMember = {
@@ -63,19 +69,104 @@ function vercelAvatar(key: string) {
   )}`;
 }
 
+type StatusFilter = BadgeStatus | "all";
+
+const STATUS_PILLS: { value: StatusFilter; label: string; dot?: string }[] = [
+  { value: "all", label: "All" },
+  { value: "unlocked", label: "Unlocked", dot: "bg-success-foreground" },
+  { value: "in-progress", label: "In Progress", dot: "bg-warning-foreground" },
+  { value: "available", label: "Available", dot: "bg-muted-foreground/50" },
+];
+
+type FlatRow = {
+  orgId: string;
+  orgName: string;
+  orgSlug: string;
+  badge: OrgBadgeWithBadge;
+};
+
+function matchesQuery(org: Org, q: string): boolean {
+  if (!q) return true;
+  const low = q.toLowerCase();
+  return (
+    org.name.toLowerCase().includes(low) ||
+    org.slug.toLowerCase().includes(low) ||
+    org.members.some((m) => m.user.email.toLowerCase().includes(low))
+  );
+}
+
 export function AdminOrgList({ orgs }: { orgs: Org[] }) {
   const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [evidenceFilter, setEvidenceFilter] = useState(false);
 
-  const filtered = query.trim()
-    ? orgs.filter(
-        (org) =>
-          org.name.toLowerCase().includes(query.toLowerCase()) ||
-          org.slug.toLowerCase().includes(query.toLowerCase()),
-      )
-    : orgs;
+  const q = query.trim();
+  const hasActiveFilters =
+    statusFilter !== "all" || evidenceFilter || Boolean(q);
+
+  // Default view: filter orgs by search only
+  const filteredOrgs = orgs.filter((org) => matchesQuery(org, q));
+
+  // Filtered view: flat badge rows matching all filters
+  const flatRows: FlatRow[] = orgs.flatMap((org) => {
+    if (!matchesQuery(org, q)) return [];
+    return org.badges
+      .filter((b) => statusFilter === "all" || b.status === statusFilter)
+      .filter((b) => !evidenceFilter || b.evidence || b.fileUrl)
+      .map((b) => ({
+        orgId: org.id,
+        orgName: org.name,
+        orgSlug: org.slug,
+        badge: b,
+      }));
+  });
 
   return (
     <div className="space-y-4">
+      {/* Filter pills */}
+      <div className="flex flex-wrap items-center gap-2">
+        {STATUS_PILLS.map((pill) => (
+          <button
+            key={pill.value}
+            type="button"
+            onClick={() => setStatusFilter(pill.value)}
+            className={cn(
+              "inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+              statusFilter === pill.value
+                ? "border-foreground/20 bg-foreground text-background"
+                : "border-input bg-background text-muted-foreground hover:border-foreground/20 hover:text-foreground",
+            )}
+          >
+            {pill.dot && (
+              <span
+                className={cn(
+                  "inline-block size-1.5 shrink-0 rounded-full",
+                  pill.dot,
+                )}
+                aria-hidden="true"
+              />
+            )}
+            {pill.label}
+          </button>
+        ))}
+
+        <div className="h-4 w-px bg-border" aria-hidden="true" />
+
+        <button
+          type="button"
+          onClick={() => setEvidenceFilter((v) => !v)}
+          className={cn(
+            "inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+            evidenceFilter
+              ? "border-foreground/20 bg-foreground text-background"
+              : "border-input bg-background text-muted-foreground hover:border-foreground/20 hover:text-foreground",
+          )}
+        >
+          <PaperclipIcon className="size-3 shrink-0" />
+          Has evidence
+        </button>
+      </div>
+
       {/* Search */}
       <InputGroup>
         <InputGroupAddon>
@@ -85,14 +176,96 @@ export function AdminOrgList({ orgs }: { orgs: Org[] }) {
         </InputGroupAddon>
         <InputGroupInput
           type="search"
-          placeholder="Search organizations…"
+          placeholder="Search by name, slug or member email…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
       </InputGroup>
 
-      {/* Results */}
-      {filtered.length === 0 ? (
+      {/* ── FILTERED VIEW: badge cards ── */}
+      {hasActiveFilters ? (
+        <>
+          <p className="text-xs text-muted-foreground">
+            {flatRows.length} result{flatRows.length !== 1 ? "s" : ""}
+          </p>
+
+          {flatRows.length === 0 ? (
+            <Frame>
+              <FramePanel>
+                <Empty>
+                  <EmptyHeader>
+                    <EmptyMedia>
+                      <SearchIcon className="size-7 text-muted-foreground" />
+                    </EmptyMedia>
+                    <EmptyTitle>No results</EmptyTitle>
+                    <EmptyDescription>
+                      {q ? (
+                        <>
+                          No results match &ldquo;{q}&rdquo; with the active
+                          filters.
+                        </>
+                      ) : (
+                        "No badges match the active filters."
+                      )}
+                    </EmptyDescription>
+                  </EmptyHeader>
+                </Empty>
+              </FramePanel>
+            </Frame>
+          ) : (
+            <div className="space-y-2">
+              {flatRows.map((row) => (
+                <Frame key={row.badge.id}>
+                  <FramePanel className="py-3">
+                    {/* Org header */}
+                    <div className="mb-3 flex items-center gap-1.5">
+                      <div className="flex size-5 shrink-0 items-center justify-center rounded border bg-muted/60 text-muted-foreground">
+                        <IconOfficeFillDuo18 className="size-3" />
+                      </div>
+                      <span className="truncate text-xs font-medium text-muted-foreground">
+                        {row.orgName}
+                      </span>
+                      <span className="text-xs text-muted-foreground/50">
+                        ·
+                      </span>
+                      <span className="truncate text-xs text-muted-foreground/50">
+                        /{row.orgSlug}
+                      </span>
+                    </div>
+
+                    {/* Badge row */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium">
+                          {row.badge.badge.name}
+                        </p>
+                        {row.badge.badge.subtitle && (
+                          <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                            {row.badge.badge.subtitle}
+                          </p>
+                        )}
+                        {(row.badge.evidence || row.badge.fileUrl) && (
+                          <div className="mt-2">
+                            <EvidenceCell ob={row.badge} />
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="shrink-0">
+                        <BadgeStatusSelect
+                          orgBadgeId={row.badge.id}
+                          current={row.badge.status as BadgeStatus}
+                        />
+                      </div>
+                    </div>
+                  </FramePanel>
+                </Frame>
+              ))}
+            </div>
+          )}
+        </>
+      ) : /* ── DEFAULT VIEW: orgs expanded ── */
+      filteredOrgs.length === 0 ? (
         <Frame>
           <FramePanel>
             <Empty>
@@ -109,7 +282,7 @@ export function AdminOrgList({ orgs }: { orgs: Org[] }) {
           </FramePanel>
         </Frame>
       ) : (
-        filtered.map((org) => (
+        filteredOrgs.map((org) => (
           <Frame key={org.slug}>
             {/* Org header + members */}
             <FramePanel>
@@ -145,7 +318,7 @@ export function AdminOrgList({ orgs }: { orgs: Org[] }) {
               </div>
 
               {org.members.length > 0 && (
-                <div className="mt-3 pt-3 border-t">
+                <div className="mt-3 border-t pt-3">
                   <p className="mb-2 text-xs font-medium text-muted-foreground">
                     Members ({org.members.length}) &middot; Badges (
                     {org.badges.length})
@@ -224,61 +397,7 @@ export function AdminOrgList({ orgs }: { orgs: Org[] }) {
                           </div>
                         </TableCell>
                         <TableCell className="max-w-[16rem]">
-                          {ob.evidence || ob.fileUrl ? (
-                            <div className="flex flex-col gap-1.5">
-                              {ob.evidence &&
-                                (ob.evidence.startsWith("http") ? (
-                                  <a
-                                    href={ob.evidence}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="block max-w-[14rem] truncate text-xs text-primary underline underline-offset-2 hover:opacity-80 transition-opacity cursor-pointer"
-                                    title={ob.evidence}
-                                  >
-                                    {ob.evidence}
-                                  </a>
-                                ) : (
-                                  <span
-                                    className="block max-w-[14rem] truncate text-xs text-muted-foreground"
-                                    title={ob.evidence}
-                                  >
-                                    {ob.evidence}
-                                  </span>
-                                ))}
-                              {ob.fileUrl &&
-                                (ob.fileUrl.toLowerCase().includes(".pdf") ? (
-                                  <a
-                                    href={ob.fileUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1.5 text-xs text-primary underline underline-offset-2 hover:opacity-80 transition-opacity cursor-pointer"
-                                  >
-                                    <span>📄</span>
-                                    <span className="max-w-[11rem] truncate">
-                                      {ob.fileUrl.split("/").pop()}
-                                    </span>
-                                  </a>
-                                ) : (
-                                  <a
-                                    href={ob.fileUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="block w-fit"
-                                  >
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img
-                                      src={ob.fileUrl}
-                                      alt="evidence"
-                                      className="h-10 w-10 rounded-md object-cover border border-border hover:opacity-80 transition-opacity cursor-pointer"
-                                    />
-                                  </a>
-                                ))}
-                            </div>
-                          ) : (
-                            <span className="text-xs text-muted-foreground/40">
-                              —
-                            </span>
-                          )}
+                          <EvidenceCell ob={ob} />
                         </TableCell>
                         <TableCell className="pe-5">
                           <BadgeStatusSelect
@@ -295,6 +414,63 @@ export function AdminOrgList({ orgs }: { orgs: Org[] }) {
           </Frame>
         ))
       )}
+    </div>
+  );
+}
+
+function EvidenceCell({ ob }: { ob: OrgBadgeWithBadge }) {
+  if (!ob.evidence && !ob.fileUrl) {
+    return <span className="text-xs text-muted-foreground/40">—</span>;
+  }
+  return (
+    <div className="flex flex-col gap-1.5">
+      {ob.evidence &&
+        (ob.evidence.startsWith("http") ? (
+          <a
+            href={ob.evidence}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block max-w-[14rem] truncate text-xs text-primary underline underline-offset-2 transition-opacity hover:opacity-80 cursor-pointer"
+            title={ob.evidence}
+          >
+            {ob.evidence}
+          </a>
+        ) : (
+          <span
+            className="block max-w-[14rem] truncate text-xs text-muted-foreground"
+            title={ob.evidence}
+          >
+            {ob.evidence}
+          </span>
+        ))}
+      {ob.fileUrl &&
+        (ob.fileUrl.toLowerCase().includes(".pdf") ? (
+          <a
+            href={ob.fileUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-xs text-primary underline underline-offset-2 transition-opacity hover:opacity-80 cursor-pointer"
+          >
+            <span>📄</span>
+            <span className="max-w-[11rem] truncate">
+              {ob.fileUrl.split("/").pop()}
+            </span>
+          </a>
+        ) : (
+          <a
+            href={ob.fileUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block w-fit"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={ob.fileUrl}
+              alt="evidence"
+              className="h-10 w-10 rounded-md object-cover border border-border transition-opacity hover:opacity-80 cursor-pointer"
+            />
+          </a>
+        ))}
     </div>
   );
 }
