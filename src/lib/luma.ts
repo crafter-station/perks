@@ -3,31 +3,43 @@ type LumaGuestResult =
   | { ok: false; reason: "not_found" | "not_approved" };
 
 export async function getLumaGuest(email: string): Promise<LumaGuestResult> {
-  const eventId = process.env.LUMA_EVENT ?? "";
+  const eventIds = [process.env.LUMA_EVENT, process.env.LUMA_EVENT_2].filter(
+    (value): value is string => Boolean(value?.trim()),
+  );
   const apiKey = process.env.LUMA_API_KEY ?? "";
+  let foundButNotApproved = false;
 
-  const url = new URL("https://public-api.luma.com/v1/event/get-guest");
-  url.searchParams.set("event_id", eventId);
-  url.searchParams.set("id", email);
+  for (const eventId of eventIds) {
+    const url = new URL("https://public-api.luma.com/v1/event/get-guest");
+    url.searchParams.set("event_id", eventId);
+    url.searchParams.set("id", email);
 
-  const res = await fetch(url.toString(), {
-    headers: { "x-luma-api-key": apiKey },
-  });
+    const res = await fetch(url.toString(), {
+      headers: { "x-luma-api-key": apiKey },
+    });
 
-  if (!res.ok) {
-    return { ok: false, reason: "not_found" };
+    if (!res.ok) {
+      continue;
+    }
+
+    const { guest } = await res.json();
+
+    if (guest.approval_status !== "approved") {
+      foundButNotApproved = true;
+      continue;
+    }
+
+    const firstName = guest.user_first_name ?? "";
+    const lastName = guest.user_last_name ?? "";
+    const fullName =
+      `${firstName} ${lastName}`.trim() || guest.user_name || email;
+
+    return { ok: true, name: fullName };
   }
 
-  const { guest } = await res.json();
-
-  if (guest.approval_status !== "approved") {
+  if (foundButNotApproved) {
     return { ok: false, reason: "not_approved" };
   }
 
-  const firstName = guest.user_first_name ?? "";
-  const lastName = guest.user_last_name ?? "";
-  const fullName =
-    `${firstName} ${lastName}`.trim() || guest.user_name || email;
-
-  return { ok: true, name: fullName };
+  return { ok: false, reason: "not_found" };
 }
