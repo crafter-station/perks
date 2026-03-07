@@ -1,15 +1,16 @@
 "use client";
 
-import { Check, Copy, ExternalLink, Loader2, LogOut } from "lucide-react";
+import { Check, Copy, ExternalLink, Loader2, X } from "lucide-react";
 import { AnimatePresence, MotionConfig, motion } from "motion/react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import {
   IconArrowDoorOut3FillDuo18,
   IconAwardCertificateFillDuo18,
   IconDarkLightFillDuo18,
+  IconGear2FillDuo18,
   IconOfficeFillDuo18,
-  IconPaperPlane2FillDuo18,
+  IconTrashFillDuo18,
   IconUserFillDuo18,
   IconUserSearchFillDuo18,
   IconVault3FillDuo18,
@@ -56,14 +57,6 @@ type Member = {
   userId: string;
   role: string;
   user?: { name?: string; email?: string; image?: string };
-};
-
-type Invitation = {
-  id: string;
-  email: string;
-  role: string;
-  status: string;
-  createdAt?: string;
 };
 
 function MemberAvatar({ member }: { member: Member }) {
@@ -188,96 +181,283 @@ function InviteDialog({
   );
 }
 
-const STATUS_LABEL: Record<string, string> = {
-  pending: "Pending",
-  accepted: "Accepted",
-  rejected: "Rejected",
-  cancelled: "Cancelled",
+type ConfirmAction = "leave" | "delete" | null;
+
+type Invitation = {
+  id: string;
+  email: string;
+  role: string;
+  status: string;
 };
 
-const STATUS_CLASS: Record<string, string> = {
-  pending: "text-warning",
-  accepted: "text-success",
-  rejected: "text-destructive",
-  cancelled: "text-muted-foreground",
-};
-
-function InvitationsDialog({
+function OrgSettingsDialog({
   orgId,
+  orgName,
   open,
   onOpenChange,
 }: {
   orgId: string;
+  orgName: string;
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) {
+  const router = useRouter();
+  const { data: session } = authClient.useSession();
+  const [members, setMembers] = useState<Member[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(false);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  const currentUserId = session?.user?.id;
+  const currentMember = members.find((m) => m.userId === currentUserId);
+  const isOwner = currentMember?.role === "owner";
+  const pendingInvitations = invitations.filter((i) => i.status === "pending");
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data } = await authClient.organization.listInvitations({
-      query: { organizationId: orgId },
-    });
-    setInvitations((data as Invitation[] | null) ?? []);
+    const [membersRes, invitationsRes] = await Promise.all([
+      authClient.organization.listMembers({ query: { organizationId: orgId } }),
+      authClient.organization.listInvitations({
+        query: { organizationId: orgId },
+      }),
+    ]);
+    setMembers((membersRes.data?.members as Member[] | null) ?? []);
+    setInvitations((invitationsRes.data as Invitation[] | null) ?? []);
     setLoading(false);
   }, [orgId]);
 
   useEffect(() => {
-    if (open) load();
+    if (open) {
+      load();
+      setConfirmAction(null);
+      setActionError(null);
+    }
   }, [open, load]);
+
+  const handleCancelInvitation = async (invitationId: string) => {
+    setCancellingId(invitationId);
+    const { error } = await authClient.organization.cancelInvitation({
+      invitationId,
+    });
+    if (!error) {
+      setInvitations((prev) => prev.filter((i) => i.id !== invitationId));
+    }
+    setCancellingId(null);
+  };
+
+  const handleLeave = async () => {
+    setActionLoading(true);
+    setActionError(null);
+    const { error } = await authClient.organization.leave({
+      organizationId: orgId,
+    });
+    setActionLoading(false);
+    if (error) {
+      setActionError(error.message ?? "Failed to leave");
+      return;
+    }
+    onOpenChange(false);
+    router.push("/");
+  };
+
+  const handleDelete = async () => {
+    setActionLoading(true);
+    setActionError(null);
+    const { error } = await authClient.organization.delete({
+      organizationId: orgId,
+    });
+    setActionLoading(false);
+    if (error) {
+      setActionError(error.message ?? "Failed to delete");
+      return;
+    }
+    onOpenChange(false);
+    router.push("/");
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Sent invitations</DialogTitle>
-        </DialogHeader>
-        <DialogPanel>
-          {loading ? (
-            <div className="flex justify-center py-6">
-              <Loader2 className="size-4 animate-spin text-muted-foreground" />
-            </div>
-          ) : invitations.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-6">
-              No invitations sent
-            </p>
-          ) : (
+      <DialogContent className="p-0 gap-0 overflow-hidden">
+        {/* Header */}
+        <div className="px-5 pt-5 pb-4">
+          <p className="text-sm font-semibold text-foreground tracking-tight">
+            Settings
+          </p>
+          <p className="text-xs text-muted-foreground mt-0.5 font-mono">
+            /{orgName}
+          </p>
+        </div>
+
+        {confirmAction ? (
+          /* ── Confirm view ── */
+          <div className="px-5 pb-5 flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              {invitations.map((inv) => (
-                <div
-                  key={inv.id}
-                  className="flex items-center justify-between gap-3 rounded-lg border bg-muted/20 px-3 py-2"
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Avatar className="size-6 rounded-full shrink-0">
-                      <AvatarImage
-                        src={vercelAvatar(inv.email)}
-                        alt={inv.email}
-                      />
-                    </Avatar>
-                    <div className="min-w-0">
-                      <p className="text-xs font-medium truncate">
-                        {inv.email}
-                      </p>
-                      <p className="text-xs text-muted-foreground capitalize">
-                        {inv.role}
-                      </p>
-                    </div>
-                  </div>
-                  <span
-                    className={cn(
-                      "text-xs font-medium shrink-0",
-                      STATUS_CLASS[inv.status] ?? "text-muted-foreground",
-                    )}
-                  >
-                    {STATUS_LABEL[inv.status] ?? inv.status}
-                  </span>
-                </div>
-              ))}
+              <p className="text-sm font-medium text-foreground">
+                {confirmAction === "delete"
+                  ? "Delete organization?"
+                  : "Leave organization?"}
+              </p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                {confirmAction === "delete"
+                  ? `"${orgName}" and all its data will be permanently removed. This cannot be undone.`
+                  : isOwner
+                    ? `You'll be removed as owner of "${orgName}". This only works if there are other owners.`
+                    : `You'll lose access to "${orgName}" and all its badges.`}
+              </p>
             </div>
-          )}
-        </DialogPanel>
+            {actionError && (
+              <p className="text-xs text-destructive">{actionError}</p>
+            )}
+            <div className="flex items-center gap-2 pt-1">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 cursor-pointer"
+                onClick={() => {
+                  setConfirmAction(null);
+                  setActionError(null);
+                }}
+                disabled={actionLoading}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                className="flex-1 cursor-pointer"
+                onClick={
+                  confirmAction === "delete" ? handleDelete : handleLeave
+                }
+                disabled={actionLoading}
+              >
+                {actionLoading ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : confirmAction === "delete" ? (
+                  "Delete"
+                ) : (
+                  "Leave"
+                )}
+              </Button>
+            </div>
+          </div>
+        ) : loading ? (
+          /* ── Loading ── */
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="size-4 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          /* ── Main view ── */
+          <>
+            {/* Members */}
+            <div className="px-5 pb-1">
+              {members.map((m) => {
+                const name = m.user?.name ?? m.user?.email ?? "Unknown";
+                const email = m.user?.email;
+                const avatarKey = email ?? name;
+                const isYou = m.userId === currentUserId;
+                return (
+                  <div key={m.id} className="flex items-center gap-3 py-2">
+                    <Avatar className="size-7 rounded-full shrink-0">
+                      <AvatarImage src={vercelAvatar(avatarKey)} alt={name} />
+                    </Avatar>
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-xs font-medium text-foreground truncate leading-none">
+                          {name}
+                        </span>
+                        {isYou && (
+                          <span className="text-[10px] text-muted-foreground shrink-0">
+                            you
+                          </span>
+                        )}
+                      </div>
+                      {email && name !== email && (
+                        <span className="text-[11px] text-muted-foreground truncate mt-0.5">
+                          {email}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[11px] text-muted-foreground shrink-0 capitalize">
+                      {m.role}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Pending invitations */}
+            {pendingInvitations.length > 0 && (
+              <>
+                <div className="border-t border-border mx-5 mt-1" />
+                <div className="px-5 pt-3 pb-1">
+                  <p className="text-[11px] text-muted-foreground mb-2">
+                    Pending · {pendingInvitations.length}
+                  </p>
+                  {pendingInvitations.map((inv) => (
+                    <div
+                      key={inv.id}
+                      className="flex items-center gap-3 py-1.5 group"
+                    >
+                      <Avatar className="size-7 rounded-full shrink-0 opacity-50">
+                        <AvatarImage
+                          src={vercelAvatar(inv.email)}
+                          alt={inv.email}
+                        />
+                      </Avatar>
+                      <div className="flex flex-col min-w-0 flex-1">
+                        <span className="text-xs text-foreground truncate leading-none">
+                          {inv.email}
+                        </span>
+                        <span className="text-[11px] text-muted-foreground mt-0.5 capitalize">
+                          {inv.role}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleCancelInvitation(inv.id)}
+                        disabled={cancellingId === inv.id}
+                        aria-label="Cancel invitation"
+                        className="shrink-0 size-6 flex items-center justify-center rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/8 opacity-0 group-hover:opacity-100 transition-all duration-150 cursor-pointer disabled:pointer-events-none"
+                      >
+                        {cancellingId === inv.id ? (
+                          <Loader2 className="size-3 animate-spin" />
+                        ) : (
+                          <X className="size-3" />
+                        )}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* Danger actions */}
+            <div className="border-t border-border mx-5 mt-2" />
+            <div className="px-3 py-2 flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setConfirmAction("leave")}
+                className="flex items-center gap-1.5 px-2 py-2 rounded-md text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/8 transition-colors duration-150 cursor-pointer"
+              >
+                <IconArrowDoorOut3FillDuo18 className="size-3.5 shrink-0" />
+                Leave
+              </button>
+              {isOwner && (
+                <button
+                  type="button"
+                  onClick={() => setConfirmAction("delete")}
+                  className="flex items-center gap-1.5 px-2 py-2 rounded-md text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/8 transition-colors duration-150 cursor-pointer"
+                >
+                  <IconTrashFillDuo18 className="size-3.5 shrink-0" />
+                  Delete organization
+                </button>
+              )}
+            </div>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );
@@ -292,7 +472,7 @@ function OrgPanel({
   const slug = typeof params?.slug === "string" ? params.slug : null;
   const { data: orgs, isPending } = authClient.useListOrganizations();
   const [inviteOpen, setInviteOpen] = useState(false);
-  const [listOpen, setListOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [members, setMembers] = useState<Member[]>([]);
   const [membersLoading, setMembersLoading] = useState(false);
 
@@ -354,6 +534,7 @@ function OrgPanel({
             }}
             aria-label="Invite member"
             title="Invite"
+            className="cursor-pointer"
           >
             <IconUserSearchFillDuo18 className="size-3.5" />
           </Button>
@@ -361,13 +542,14 @@ function OrgPanel({
             variant="ghost"
             size="icon-xs"
             onClick={() => {
-              setListOpen(true);
+              setSettingsOpen(true);
               handleDialogChange(true);
             }}
-            aria-label="View invitations"
-            title="Invitations"
+            aria-label="Organization settings"
+            title="Settings"
+            className="cursor-pointer"
           >
-            <IconPaperPlane2FillDuo18 className="size-3.5" />
+            <IconGear2FillDuo18 className="size-3.5" />
           </Button>
         </div>
       </div>
@@ -396,16 +578,17 @@ function OrgPanel({
       <InviteDialog
         orgId={activeOrg.id}
         open={inviteOpen}
-        onOpenChange={(v) => {
+        onOpenChange={(v: boolean) => {
           setInviteOpen(v);
           handleDialogChange(v);
         }}
       />
-      <InvitationsDialog
+      <OrgSettingsDialog
         orgId={activeOrg.id}
-        open={listOpen}
-        onOpenChange={(v) => {
-          setListOpen(v);
+        orgName={activeOrg.slug}
+        open={settingsOpen}
+        onOpenChange={(v: boolean) => {
+          setSettingsOpen(v);
           handleDialogChange(v);
         }}
       />
