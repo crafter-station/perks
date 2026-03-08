@@ -72,7 +72,7 @@ export default function Login() {
       >
         <div className="p-8 pb-6">
           <div>
-            <Link href="/" aria-label="go home">
+            <Link prefetch={true} href="/" aria-label="go home">
               <IconCube />
             </Link>
             <h1 className="mb-1 mt-4 text-xl font-semibold">

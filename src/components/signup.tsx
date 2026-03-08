@@ -10,7 +10,7 @@ export default function SignUp() {
       <div className="bg-card m-auto h-fit w-full max-w-sm rounded-[calc(var(--radius)+.125rem)] border p-0.5 shadow-md dark:[--color-muted:var(--color-zinc-900)]">
         <div className="p-8 pb-6">
           <div>
-            <Link href="/" aria-label="go home">
+            <Link prefetch={true} href="/" aria-label="go home">
               <IconCube />
             </Link>
             <h1 className="mb-1 mt-4 text-xl font-semibold">Join She Ships</h1>

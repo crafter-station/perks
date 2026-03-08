@@ -309,7 +309,7 @@ export function GetStartedDialog() {
       <Button
         variant="default"
         render={
-          <Link href="/signup">
+          <Link prefetch={true} href="/signup">
             Get Started
             <ChevronRight />
           </Link>

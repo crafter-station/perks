@@ -1,5 +1,8 @@
+import { PlayCircle } from "lucide-react";
+import Link from "next/link";
 import { GetStartedDialog } from "@/components/get-started-dialog";
 import { Logo } from "@/components/logo";
+import { Button } from "@/components/ui/button";
 import { ClerkIconDark as Clerk } from "@/components/ui/svgs/clerk";
 import { Firebase } from "@/components/ui/svgs/firebase";
 import { Linear } from "@/components/ui/svgs/linear";
@@ -19,7 +22,17 @@ export default function Integrations() {
               The hackathon for women who build. Sign up and start shipping.
             </p>
           </div>
-          <GetStartedDialog />
+          <div className="flex items-center gap-3">
+            <GetStartedDialog />
+            <Button
+              variant="outline"
+              render={<Link prefetch={true} href="/tutorial" />}
+              className="gap-1.5"
+            >
+              <PlayCircle className="size-4" />
+              Watch tutorial
+            </Button>
+          </div>
         </div>
       </div>
     </section>
