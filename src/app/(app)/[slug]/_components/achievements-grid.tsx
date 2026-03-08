@@ -5,18 +5,43 @@ import {
   IconAward,
   IconBadgeSparkle,
   IconBolt,
+  IconBookOpen,
+  IconBrightnessIncrease,
+  IconCloudUpload,
+  IconConnect,
+  IconConnections,
+  IconFeather,
+  IconFile,
   IconFlame,
   IconHeart,
+  IconHearts,
   IconKey,
+  IconLocation,
   IconLock,
   IconMagicWandSparkle,
+  IconOpenInBrowser,
+  IconPin,
   IconRocket,
+  IconRulerPen,
+  IconSignal,
+  IconSitemap,
+  IconSparkle,
+  IconSparkle2,
   IconStar,
   IconStarSparkle,
+  IconSwap,
   IconThumbsUp,
+  IconVideo,
 } from "nucleo-glass";
+import {
+  IconAwardFillDuo18,
+  IconLockFillDuo18,
+  IconProgressBarFillDuo18,
+  IconTargetFillDuo18,
+} from "nucleo-ui-essential-fill-duo-18";
 import { useRef, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   MorphingDialog,
@@ -28,6 +53,7 @@ import {
   MorphingDialogTitle,
   MorphingDialogTrigger,
 } from "@/components/ui/morphing-dialog";
+import { SubtleTab, SubtleTabItem } from "@/components/ui/subtle-tab";
 import { Textarea } from "@/components/ui/textarea";
 import type { BadgeStatus, OrgBadgeWithBadge } from "@/lib/badges";
 import { updateBadgeEvidence } from "../actions";
@@ -35,6 +61,7 @@ import { updateBadgeEvidence } from "../actions";
 // Map iconName string → component
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const iconMap: Record<string, any> = {
+  // original 12
   IconRocket,
   IconBolt,
   IconAward,
@@ -47,10 +74,34 @@ const iconMap: Record<string, any> = {
   IconStar,
   IconBadgeSparkle,
   IconLock,
+  // new 21
+  IconFile,
+  IconConnections,
+  IconRulerPen,
+  IconOpenInBrowser,
+  IconVideo,
+  IconSignal,
+  IconHearts,
+  IconLocation,
+  IconSparkle,
+  IconCloudUpload,
+  IconPin,
+  IconBrightnessIncrease,
+  IconSparkle2,
+  IconConnect,
+  IconSitemap,
+  IconSwap,
+  IconFeather,
+  IconBookOpen,
 };
 
-const filters = ["All", "Unlocked", "In progress", "Available"] as const;
-type Filter = (typeof filters)[number];
+const filters = [
+  { label: "All", icon: IconTargetFillDuo18 },
+  { label: "Unlocked", icon: IconAwardFillDuo18 },
+  { label: "In progress", icon: IconProgressBarFillDuo18 },
+  { label: "Available", icon: IconLockFillDuo18 },
+] as const;
+type Filter = (typeof filters)[number]["label"];
 
 const statusLabel: Record<BadgeStatus, string> = {
   unlocked: "Unlocked",
@@ -228,8 +279,8 @@ function AchievementCard({ item }: { item: OrgBadgeWithBadge }) {
     <MorphingDialog
       transition={{ type: "spring", bounce: 0.05, duration: 0.25 }}
     >
-      <MorphingDialogTrigger className="w-full text-left cursor-pointer">
-        <div className="relative flex flex-col items-center gap-4 p-5 rounded-2xl border bg-card text-card-foreground shadow-xs/5 transition-all duration-200 hover:scale-[1.01] hover:shadow-xs cursor-pointer before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(var(--radius-2xl)-1px)] before:shadow-[0_1px_--theme(--color-black/4%)] dark:before:shadow-[0_-1px_--theme(--color-white/6%)]">
+      <MorphingDialogTrigger className="w-full h-full text-left cursor-pointer">
+        <div className="relative flex flex-col items-center gap-4 p-5 rounded-2xl border bg-card text-card-foreground shadow-xs/5 transition-all duration-200 hover:scale-[1.01] hover:shadow-xs cursor-pointer h-full before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(var(--radius-2xl)-1px)] before:shadow-[0_1px_--theme(--color-black/4%)] dark:before:shadow-[0_-1px_--theme(--color-white/6%)]">
           {isProgress && (
             <span className="absolute top-3 right-3 w-1.5 h-1.5 rounded-full bg-warning animate-pulse" />
           )}
@@ -343,18 +394,33 @@ function AchievementCard({ item }: { item: OrgBadgeWithBadge }) {
 }
 
 export function AchievementsGrid({ items }: { items: OrgBadgeWithBadge[] }) {
-  const [activeFilter, setActiveFilter] = useState<Filter>("All");
+  const [filterIndex, setFilterIndex] = useState(0);
+  const [search, setSearch] = useState("");
+
+  const activeFilter = filters[filterIndex].label;
 
   const filtered = items.filter((item) => {
-    if (activeFilter === "All") return true;
-    if (activeFilter === "Unlocked") return item.status === "unlocked";
-    if (activeFilter === "In progress") return item.status === "in-progress";
-    if (activeFilter === "Available") return item.status === "available";
-    return true;
+    const matchesFilter =
+      activeFilter === "All" ||
+      (activeFilter === "Unlocked" && item.status === "unlocked") ||
+      (activeFilter === "In progress" && item.status === "in-progress") ||
+      (activeFilter === "Available" && item.status === "available");
+
+    if (!matchesFilter) return false;
+
+    if (!search.trim()) return true;
+
+    const q = search.toLowerCase();
+    return (
+      item.badge.name.toLowerCase().includes(q) ||
+      item.badge.subtitle?.toLowerCase().includes(q) ||
+      item.badge.description?.toLowerCase().includes(q) ||
+      item.evidence?.toLowerCase().includes(q) ||
+      statusLabel[item.status].toLowerCase().includes(q)
+    );
   });
 
-  // Counts for filter labels
-  const counts: Record<Filter, number> = {
+  const counts = {
     All: items.length,
     Unlocked: items.filter((i) => i.status === "unlocked").length,
     "In progress": items.filter((i) => i.status === "in-progress").length,
@@ -363,50 +429,56 @@ export function AchievementsGrid({ items }: { items: OrgBadgeWithBadge[] }) {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-md mx-auto px-5 pt-16 pb-12">
-        <h1 className="text-4xl font-semibold text-foreground mb-1">
+      <div className="max-w-3xl mx-auto px-4 sm:px-5 pt-10 sm:pt-16 pb-12">
+        <h1 className="text-3xl sm:text-4xl font-semibold text-foreground mb-1">
           Achievements
         </h1>
-        <p className="text-sm text-muted-foreground mb-6">
+        <p className="text-sm text-muted-foreground mb-5 sm:mb-6">
           {counts.Unlocked} of {counts.All} unlocked
         </p>
 
-        {/* Filters */}
-        <div className="flex gap-2 flex-wrap mb-7">
-          {filters.map((f) => (
-            <button
-              key={f}
-              type="button"
-              onClick={() => setActiveFilter(f)}
-              className="px-3.5 py-1.5 rounded-full text-sm font-medium transition-all duration-150 cursor-pointer"
-              style={
-                activeFilter === f
-                  ? {
-                      background: "var(--color-primary)",
-                      color: "var(--color-primary-foreground)",
-                    }
-                  : {
-                      background: "var(--color-muted)",
-                      color: "var(--color-muted-foreground)",
-                      border: "1px solid var(--color-border)",
-                    }
-              }
-            >
-              {f}
-              {counts[f] > 0 && f !== "All" && (
-                <span className="ml-1.5 text-xs opacity-60">{counts[f]}</span>
-              )}
-            </button>
-          ))}
+        {/* Search */}
+        <Input
+          type="search"
+          placeholder="Search achievements…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="mb-4 sm:hidden"
+        />
+
+        {/* Filters + Search */}
+        <div className="flex items-center justify-between gap-3 mb-6 sm:mb-7">
+          <SubtleTab
+            idPrefix="achievements"
+            selectedIndex={filterIndex}
+            onSelect={setFilterIndex}
+          >
+            {filters.map((f, i) => (
+              <SubtleTabItem
+                key={f.label}
+                index={i}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                icon={f.icon as any}
+                label={`${f.label} · ${counts[f.label]}`}
+              />
+            ))}
+          </SubtleTab>
+          <Input
+            type="search"
+            placeholder="Search…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="max-w-44 shrink-0 hidden sm:inline-flex"
+          />
         </div>
 
         {/* Grid */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {filtered.map((item) => (
             <AchievementCard key={item.id} item={item} />
           ))}
           {filtered.length === 0 && (
-            <p className="col-span-2 text-center py-20 text-muted-foreground text-sm">
+            <p className="col-span-2 sm:col-span-3 text-center py-20 text-muted-foreground text-sm">
               Nothing here yet
             </p>
           )}
