@@ -1,23 +1,23 @@
 "use client";
 
+import { AnimatePresence, motion } from "framer-motion";
+import type { LucideIcon } from "lucide-react";
 import {
+  createContext,
+  forwardRef,
+  type HTMLAttributes,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
   useId,
   useRef,
   useState,
-  useCallback,
-  useEffect,
-  createContext,
-  useContext,
-  forwardRef,
-  type ReactNode,
-  type HTMLAttributes,
 } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import type { LucideIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { springs } from "@/lib/springs";
-import { fontWeights } from "@/lib/font-weight";
 import { useProximityHover } from "@/hooks/use-proximity-hover";
+import { fontWeights } from "@/lib/font-weight";
+import { springs } from "@/lib/springs";
+import { cn } from "@/lib/utils";
 
 interface SubtleTabContextValue {
   registerTab: (index: number, element: HTMLElement | null) => void;
@@ -35,10 +35,8 @@ function useSubtleTab() {
   return ctx;
 }
 
-interface SubtleTabProps extends Omit<
-  HTMLAttributes<HTMLDivElement>,
-  "onSelect"
-> {
+interface SubtleTabProps
+  extends Omit<HTMLAttributes<HTMLDivElement>, "onSelect"> {
   children: ReactNode;
   selectedIndex: number;
   onSelect: (index: number) => void;
@@ -168,7 +166,12 @@ const SubtleTab = forwardRef<HTMLDivElement, SubtleTabProps>(
           {/* Selected pill */}
           {selectedRect && (
             <motion.div
-              className="absolute rounded-full bg-primary/80 pointer-events-none"
+              className="absolute rounded-lg pointer-events-none border shadow-md shadow-zinc-950/20 dark:border-zinc-950/50 dark:shadow-none"
+              style={{
+                background:
+                  "linear-gradient(to bottom, color-mix(in srgb, var(--color-primary) 85%, transparent), var(--color-primary))",
+                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.25)",
+              }}
               initial={false}
               animate={{
                 left: selectedRect.left,
@@ -188,7 +191,7 @@ const SubtleTab = forwardRef<HTMLDivElement, SubtleTabProps>(
           <AnimatePresence>
             {hoverRect && !isHoveringSelected && selectedRect && (
               <motion.div
-                className="absolute rounded-full bg-accent/60 dark:bg-accent/30 pointer-events-none"
+                className="absolute rounded-lg bg-black/6 dark:bg-white/8 pointer-events-none"
                 initial={{
                   left: selectedRect.left,
                   width: selectedRect.width,
@@ -304,7 +307,11 @@ const SubtleTabItem = forwardRef<HTMLButtonElement, SubtleTabItemProps>(
           strokeWidth={isActive ? 2 : 1.5}
           className={cn(
             "transition-[color,stroke-width] duration-80",
-            isActive ? "text-foreground" : "text-muted-foreground",
+            selectedIndex === index
+              ? "text-primary-foreground"
+              : hoveredIndex === index
+                ? "text-foreground"
+                : "text-muted-foreground",
           )}
         />
         <span className="inline-grid text-[13px] whitespace-nowrap">
@@ -318,7 +325,11 @@ const SubtleTabItem = forwardRef<HTMLButtonElement, SubtleTabItemProps>(
           <span
             className={cn(
               "col-start-1 row-start-1 transition-[color,font-variation-settings] duration-80",
-              isActive ? "text-foreground" : "text-muted-foreground",
+              selectedIndex === index
+                ? "text-primary-foreground"
+                : hoveredIndex === index
+                  ? "text-foreground"
+                  : "text-muted-foreground",
             )}
             style={{
               fontVariationSettings:
