@@ -13,6 +13,16 @@ import {
 import { useState } from "react";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogDescription,
+  DialogHeader,
+  DialogPanel,
+  DialogPopup,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   Empty,
   EmptyDescription,
@@ -422,55 +432,86 @@ function EvidenceCell({ ob }: { ob: OrgBadgeWithBadge }) {
   if (!ob.evidence && !ob.fileUrl) {
     return <span className="text-xs text-muted-foreground/40">—</span>;
   }
+
+  const isPdf = ob.fileUrl?.toLowerCase().includes(".pdf");
+  const fileName = ob.fileUrl?.split("/").pop();
+
+  // Trigger: preview snippet + eye icon
+  const trigger = (
+    <Button size="sm" variant="outline">
+      View
+    </Button>
+  );
+
   return (
-    <div className="flex flex-col gap-1.5">
-      {ob.evidence &&
-        (ob.evidence.startsWith("http") ? (
-          <a
-            href={ob.evidence}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block max-w-[14rem] truncate text-xs text-primary underline underline-offset-2 transition-opacity hover:opacity-80 cursor-pointer"
-            title={ob.evidence}
-          >
-            {ob.evidence}
-          </a>
-        ) : (
-          <span
-            className="block max-w-[14rem] truncate text-xs text-muted-foreground"
-            title={ob.evidence}
-          >
-            {ob.evidence}
-          </span>
-        ))}
-      {ob.fileUrl &&
-        (ob.fileUrl.toLowerCase().includes(".pdf") ? (
-          <a
-            href={ob.fileUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-xs text-primary underline underline-offset-2 transition-opacity hover:opacity-80 cursor-pointer"
-          >
-            <span>📄</span>
-            <span className="max-w-[11rem] truncate">
-              {ob.fileUrl.split("/").pop()}
-            </span>
-          </a>
-        ) : (
-          <a
-            href={ob.fileUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block w-fit"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={ob.fileUrl}
-              alt="evidence"
-              className="h-10 w-10 rounded-md object-cover border border-border transition-opacity hover:opacity-80 cursor-pointer"
-            />
-          </a>
-        ))}
-    </div>
+    <Dialog>
+      <DialogTrigger render={trigger} />
+      <DialogPopup showCloseButton>
+        <DialogHeader>
+          <DialogTitle>{ob.badge.name}</DialogTitle>
+          {ob.badge.subtitle && (
+            <DialogDescription>{ob.badge.subtitle}</DialogDescription>
+          )}
+        </DialogHeader>
+        <DialogPanel>
+          <div className="flex flex-col gap-4">
+            {ob.evidence && (
+              <div className="flex flex-col gap-1.5">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  Context
+                </p>
+                {ob.evidence.startsWith("http") ? (
+                  <a
+                    href={ob.evidence}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="break-all text-sm text-primary underline underline-offset-2 hover:opacity-80 transition-opacity cursor-pointer"
+                  >
+                    {ob.evidence}
+                  </a>
+                ) : (
+                  <p className="text-sm text-foreground whitespace-pre-wrap break-words">
+                    {ob.evidence}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {ob.fileUrl && (
+              <div className="flex flex-col gap-1.5">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  Attachment
+                </p>
+                {isPdf ? (
+                  <a
+                    href={ob.fileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2.5 text-sm text-primary hover:opacity-80 transition-opacity cursor-pointer w-fit"
+                  >
+                    <PaperclipIcon className="size-4 shrink-0" />
+                    <span className="truncate max-w-xs">{fileName}</span>
+                  </a>
+                ) : (
+                  <a
+                    href={ob.fileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-fit"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={ob.fileUrl}
+                      alt="evidence"
+                      className="max-h-72 w-auto rounded-xl border border-border object-contain cursor-pointer hover:opacity-90 transition-opacity"
+                    />
+                  </a>
+                )}
+              </div>
+            )}
+          </div>
+        </DialogPanel>
+      </DialogPopup>
+    </Dialog>
   );
 }
