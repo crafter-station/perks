@@ -244,7 +244,7 @@ export default async function CertificatePage({
                 <div className="h-px flex-1 bg-primary/20" />
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {unlockedBadges.map(({ badge }) => {
                   const Icon = iconMap[badge.iconName] ?? IconLock;
                   return (

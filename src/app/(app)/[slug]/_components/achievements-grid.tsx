@@ -473,12 +473,12 @@ export function AchievementsGrid({ items }: { items: OrgBadgeWithBadge[] }) {
         </div>
 
         {/* Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {filtered.map((item) => (
             <AchievementCard key={item.id} item={item} />
           ))}
           {filtered.length === 0 && (
-            <p className="col-span-2 sm:col-span-3 text-center py-20 text-muted-foreground text-sm">
+            <p className="col-span-1 sm:col-span-3 text-center py-20 text-muted-foreground text-sm">
               Nothing here yet
             </p>
           )}
