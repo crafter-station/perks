@@ -250,7 +250,7 @@ export default async function CertificatePage({
                   return (
                     <div
                       key={badge.name}
-                      className="flex items-center gap-3 rounded-xl px-3.5 py-3 border border-border bg-card"
+                      className="flex items-center gap-3 rounded-xl px-3.5 py-3 border border-border bg-card min-h-16"
                     >
                       <div className="shrink-0 size-9 rounded-lg flex items-center justify-center bg-muted">
                         <Icon
