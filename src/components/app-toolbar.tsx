@@ -15,7 +15,7 @@ import {
   IconUserSearchFillDuo18,
   IconVault3FillDuo18,
 } from "nucleo-ui-essential-fill-duo-18";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import useMeasure from "react-use-measure";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -641,16 +641,34 @@ function ProfilePanel() {
 }
 
 function CertificatePanel() {
-  const [loading, setLoading] = useState(false);
-  const [done, setDone] = useState(false);
+  const params = useParams();
+  const slug = typeof params?.slug === "string" ? params.slug : null;
+  const { data: session, isPending: sessionPending } = authClient.useSession();
+  const { data: orgs, isPending: orgsPending } =
+    authClient.useListOrganizations();
+  const [memberId, setMemberId] = useState<string | null>(null);
+  const [memberLoading, setMemberLoading] = useState(false);
 
-  const handleGenerate = async () => {
-    setLoading(true);
-    await new Promise((r) => setTimeout(r, 1500));
-    setLoading(false);
-    setDone(true);
-    setTimeout(() => setDone(false), 3000);
-  };
+  const activeOrg = slug
+    ? ((orgs ?? []).find((o) => o.slug === slug) ?? null)
+    : null;
+
+  useEffect(() => {
+    if (!activeOrg?.id || !session?.user?.id) return;
+    setMemberLoading(true);
+    authClient.organization
+      .listMembers({ query: { organizationId: activeOrg.id } })
+      .then(({ data }) => {
+        const me = (data?.members as Member[] | null)?.find(
+          (m) => m.userId === session.user.id,
+        );
+        setMemberId(me?.id ?? null);
+      })
+      .finally(() => setMemberLoading(false));
+  }, [activeOrg?.id, session?.user?.id]);
+
+  const isLoading = sessionPending || orgsPending || memberLoading;
+  const certificateUrl = memberId ? `/certificate/${memberId}` : null;
 
   return (
     <div className="flex flex-col gap-3">
@@ -662,21 +680,32 @@ function CertificatePanel() {
           Certificate
         </span>
         <span className="text-xs text-muted-foreground">
-          Generate your participation certificate for this hackathon.
+          View your participation certificate for this hackathon.
         </span>
       </div>
       <Button
         variant="outline"
         size="sm"
         className="w-full"
-        onClick={handleGenerate}
-        disabled={true}
+        disabled={isLoading || !certificateUrl}
+        render={
+          certificateUrl ? (
+            // biome-ignore lint/a11y/useAnchorContent: Button children are merged into the anchor by useRender
+            <a
+              href={certificateUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            />
+          ) : undefined
+        }
       >
-        {loading
-          ? "Generating…"
-          : done
-            ? "Downloaded!"
-            : "Generate certificate"}
+        {isLoading ? (
+          <Loader2 className="size-3.5 animate-spin" />
+        ) : certificateUrl ? (
+          "View certificate"
+        ) : (
+          "No team selected"
+        )}
       </Button>
     </div>
   );
