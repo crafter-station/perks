@@ -1,25 +1,9 @@
 import { ImageResponse } from "next/og";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
-export const size = { width: 1920, height: 1080 };
+export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
-
-let svgDataUriCache: string | null = null;
-function getSvgDataUri() {
-	if (svgDataUriCache) return svgDataUriCache;
-	const svgPath = join(
-		process.cwd(),
-		"public",
-		"certificate",
-		"SS-ParticipantCertificate.svg",
-	);
-	const svgContent = readFileSync(svgPath, "utf-8");
-	svgDataUriCache = `data:image/svg+xml;base64,${Buffer.from(svgContent).toString("base64")}`;
-	return svgDataUriCache;
-}
 
 export default async function OGImage({
 	params,
@@ -43,8 +27,8 @@ export default async function OGImage({
 		return new ImageResponse(
 			<div
 				style={{
-					width: 1920,
-					height: 1080,
+					width: "100%",
+					height: "100%",
 					display: "flex",
 					alignItems: "center",
 					justifyContent: "center",
@@ -59,51 +43,79 @@ export default async function OGImage({
 		);
 	}
 
-	const svgDataUri = getSvgDataUri();
-
 	return new ImageResponse(
 		<div
 			style={{
-				width: 1920,
-				height: 1080,
+				width: "100%",
+				height: "100%",
 				display: "flex",
-				position: "relative",
+				flexDirection: "column",
+				justifyContent: "center",
+				backgroundColor: "#0C0C0C",
+				padding: "60px 80px",
 			}}
 		>
-			{/* Certificate SVG background template */}
-			<img
-				src={svgDataUri}
-				width={1920}
-				height={1080}
-				style={{ position: "absolute", top: 0, left: 0 }}
-			/>
-
-			{/* Participant Name — positioned to match certificate preview */}
+			{/* Top accent bar */}
 			<div
 				style={{
 					position: "absolute",
-					top: 530,
-					left: 655,
-					color: "white",
-					fontSize: 64,
+					top: 0,
+					left: 0,
+					width: "100%",
+					height: 4,
+					backgroundColor: "#E9A1C9",
+				}}
+			/>
+
+			{/* Branding */}
+			<div
+				style={{
+					display: "flex",
+					fontSize: 20,
+					fontWeight: 600,
+					color: "#E9A1C9",
+					letterSpacing: "0.15em",
+					marginBottom: 8,
+				}}
+			>
+				SHE SHIPS HACKATHON
+			</div>
+
+			<div
+				style={{
+					display: "flex",
+					fontSize: 22,
+					color: "rgba(255,255,255,0.4)",
+					fontWeight: 600,
+					letterSpacing: "0.1em",
+					marginBottom: 48,
+				}}
+			>
+				CERTIFICATE OF PARTICIPATION
+			</div>
+
+			{/* Name */}
+			<div
+				style={{
+					display: "flex",
+					fontSize: 72,
 					fontWeight: 700,
-					letterSpacing: "0.06em",
+					color: "white",
+					letterSpacing: "0.04em",
 					lineHeight: 1.1,
-					maxWidth: 1200,
+					marginBottom: 24,
 				}}
 			>
 				{member.user.name.toUpperCase()}
 			</div>
 
-			{/* Team Name */}
+			{/* Team */}
 			<div
 				style={{
-					position: "absolute",
-					top: 748,
-					left: 998,
-					color: "#E9A1C9",
+					display: "flex",
 					fontSize: 32,
 					fontWeight: 600,
+					color: "#E9A1C9",
 				}}
 			>
 				Team {member.organization.name}
