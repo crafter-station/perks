@@ -751,8 +751,6 @@ function CertificatePanel() {
         );
         if (me?.nanoId && activeOrg.slug) {
           setCertificateUrl(`/c/${activeOrg.slug}/${me.nanoId}`);
-        } else if (me?.id) {
-          setCertificateUrl(`/certificate/${me.id}`);
         }
       })
       .finally(() => setMemberLoading(false));
