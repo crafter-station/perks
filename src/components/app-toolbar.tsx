@@ -738,7 +738,7 @@ function CertificatePanel() {
 
   const activeOrg = slug
     ? ((orgs ?? []).find((o) => o.slug === slug) ?? null)
-    : null;
+    : (orgs?.[0] ?? null);
 
   useEffect(() => {
     if (!activeOrg?.id || !session?.user?.id) return;
