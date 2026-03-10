@@ -147,7 +147,7 @@ export function Controls({
     const params = new URLSearchParams({
       startTask: "CERTIFICATION_NAME",
       name: "She Ships Hackathon — Participant Certificate",
-      organizationName: "SheShips by Crafter Station x The Glitch Girls",
+      organizationId: "111972105",
       issueYear: String(issueDate.getFullYear()),
       issueMonth: String(issueDate.getMonth() + 1),
       certUrl,
