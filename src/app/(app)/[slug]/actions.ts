@@ -48,3 +48,19 @@ export async function updateBadgeEvidence(
 
   revalidatePath(`/${orgBadge.organization.slug}`);
 }
+
+export async function getCertificateUrl(): Promise<string | null> {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) return null;
+
+  const member = await prisma.member.findFirst({
+    where: { userId: session.user.id },
+    select: {
+      nanoId: true,
+      organization: { select: { slug: true } },
+    },
+  });
+
+  if (!member?.nanoId) return null;
+  return `/c/${member.organization.slug}/${member.nanoId}`;
+}

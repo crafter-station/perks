@@ -31,6 +31,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import useClickOutside from "@/hooks/useClickOutside";
+import { getCertificateUrl } from "@/app/(app)/[slug]/actions";
 import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 
@@ -728,35 +729,19 @@ function ProfilePanel({
 }
 
 function CertificatePanel() {
-  const params = useParams();
-  const slug = typeof params?.slug === "string" ? params.slug : null;
-  const { data: session, isPending: sessionPending } = authClient.useSession();
-  const { data: orgs, isPending: orgsPending } =
-    authClient.useListOrganizations();
+  const { data: session } = authClient.useSession();
   const [certificateUrl, setCertificateUrl] = useState<string | null>(null);
-  const [memberLoading, setMemberLoading] = useState(false);
-
-  const activeOrg = slug
-    ? ((orgs ?? []).find((o) => o.slug === slug) ?? null)
-    : (orgs?.[0] ?? null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!activeOrg?.id || !session?.user?.id) return;
-    setMemberLoading(true);
-    authClient.organization
-      .listMembers({ query: { organizationId: activeOrg.id } })
-      .then(({ data }) => {
-        const me = (data?.members as (Member & { nanoId?: string })[] | null)?.find(
-          (m) => m.userId === session.user.id,
-        );
-        if (me?.nanoId && activeOrg.slug) {
-          setCertificateUrl(`/c/${activeOrg.slug}/${me.nanoId}`);
-        }
-      })
-      .finally(() => setMemberLoading(false));
-  }, [activeOrg?.id, activeOrg?.slug, session?.user?.id]);
+    if (!session?.user?.id) return;
+    setLoading(true);
+    getCertificateUrl()
+      .then((url) => setCertificateUrl(url))
+      .finally(() => setLoading(false));
+  }, [session?.user?.id]);
 
-  const isLoading = sessionPending || orgsPending || memberLoading;
+  const isLoading = loading;
 
   return (
     <div className="flex flex-col gap-3">
