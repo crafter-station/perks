@@ -100,6 +100,7 @@ model Organization {
 
 model Member {
   id             String       @id
+  nanoId         String       @unique @default(cuid())
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   userId         String

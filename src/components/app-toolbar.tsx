@@ -29,6 +29,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import useClickOutside from "@/hooks/useClickOutside";
 import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
@@ -596,47 +597,133 @@ function OrgPanel({
   );
 }
 
-function ProfilePanel() {
+function ProfilePanel({
+  onDialogChange,
+}: { onDialogChange: (open: boolean) => void }) {
   const { data: session } = authClient.useSession();
   const user = session?.user;
   const avatarKey = user?.name ?? user?.email ?? "unknown";
+  const [editOpen, setEditOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const handleOpen = () => {
+    setName(user?.name ?? "");
+    setEditOpen(true);
+    onDialogChange(true);
+  };
+
+  const saveName = async () => {
+    const trimmed = name.trim();
+    if (!trimmed || trimmed === user?.name) {
+      setEditOpen(false);
+      return;
+    }
+    setSaving(true);
+    await authClient.updateUser({ name: trimmed });
+    setSaving(false);
+    setEditOpen(false);
+  };
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center gap-3">
-        <Avatar className="size-9 rounded-lg shrink-0">
-          <AvatarImage src={vercelAvatar(avatarKey)} alt={user?.name ?? ""} />
-        </Avatar>
-        <div className="flex flex-col min-w-0 flex-1">
-          <span
-            className="text-sm font-semibold text-card-foreground truncate"
-            style={{ letterSpacing: "-0.02em" }}
-          >
-            {user?.name ?? "—"}
-          </span>
-          <span className="text-xs text-muted-foreground truncate">
-            {user?.email ?? "—"}
-          </span>
-        </div>
-        <Button
-          variant="ghost"
-          size="icon-xs"
-          aria-label="Sign out"
-          title="Sign out"
-          onClick={async () => {
-            await authClient.signOut({
-              fetchOptions: {
-                onSuccess: () => {
-                  window.location.href = "/login";
+    <>
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center gap-3">
+          <Avatar className="size-9 rounded-lg shrink-0">
+            <AvatarImage
+              src={vercelAvatar(avatarKey)}
+              alt={user?.name ?? ""}
+            />
+          </Avatar>
+          <div className="flex flex-col min-w-0 flex-1">
+            <button
+              type="button"
+              onClick={handleOpen}
+              className="text-sm font-semibold text-card-foreground truncate text-left hover:underline cursor-pointer"
+              style={{ letterSpacing: "-0.02em" }}
+              title="Edit name"
+            >
+              {user?.name ?? "—"}
+            </button>
+            <span className="text-xs text-muted-foreground truncate">
+              {user?.email ?? "—"}
+            </span>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            aria-label="Sign out"
+            title="Sign out"
+            onClick={async () => {
+              await authClient.signOut({
+                fetchOptions: {
+                  onSuccess: () => {
+                    window.location.href = "/login";
+                  },
                 },
-              },
-            });
-          }}
-        >
-          <IconArrowDoorOut3FillDuo18 className="size-3.5" />
-        </Button>
+              });
+            }}
+          >
+            <IconArrowDoorOut3FillDuo18 className="size-3.5" />
+          </Button>
+        </div>
       </div>
-    </div>
+
+      <Dialog
+        open={editOpen}
+        onOpenChange={(v) => {
+          setEditOpen(v);
+          onDialogChange(v);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit your name</DialogTitle>
+            <DialogDescription>
+              This is the name displayed on your profile and certificates.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogPanel>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="edit-name">Name</Label>
+              <Input
+                id="edit-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") saveName();
+                }}
+                placeholder="Your name"
+                disabled={saving}
+                autoFocus
+              />
+            </div>
+          </DialogPanel>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setEditOpen(false)}
+              disabled={saving}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={saveName}
+              disabled={saving || !name.trim()}
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
@@ -646,7 +733,7 @@ function CertificatePanel() {
   const { data: session, isPending: sessionPending } = authClient.useSession();
   const { data: orgs, isPending: orgsPending } =
     authClient.useListOrganizations();
-  const [memberId, setMemberId] = useState<string | null>(null);
+  const [certificateUrl, setCertificateUrl] = useState<string | null>(null);
   const [memberLoading, setMemberLoading] = useState(false);
 
   const activeOrg = slug
@@ -659,16 +746,17 @@ function CertificatePanel() {
     authClient.organization
       .listMembers({ query: { organizationId: activeOrg.id } })
       .then(({ data }) => {
-        const me = (data?.members as Member[] | null)?.find(
+        const me = (data?.members as (Member & { nanoId?: string })[] | null)?.find(
           (m) => m.userId === session.user.id,
         );
-        setMemberId(me?.id ?? null);
+        if (me?.nanoId && activeOrg.slug) {
+          setCertificateUrl(`/c/${activeOrg.slug}/${me.nanoId}`);
+        }
       })
       .finally(() => setMemberLoading(false));
-  }, [activeOrg?.id, session?.user?.id]);
+  }, [activeOrg?.id, activeOrg?.slug, session?.user?.id]);
 
   const isLoading = sessionPending || orgsPending || memberLoading;
-  const certificateUrl = memberId ? `/certificate/${memberId}` : null;
 
   return (
     <div className="flex flex-col gap-3">
@@ -990,7 +1078,11 @@ export function AppToolbar() {
                           {item.id === 1 && (
                             <OrgPanel onDialogChange={setDialogOpen} />
                           )}
-                          {item.id === 2 && <ProfilePanel />}
+                          {item.id === 2 && (
+                            <ProfilePanel
+                              onDialogChange={setDialogOpen}
+                            />
+                          )}
                           {item.id === 3 && <CertificatePanel />}
                           {item.id === 4 && (
                             <SponsorResourcesPanel
